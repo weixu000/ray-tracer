@@ -40,7 +40,7 @@ glm::vec3 Scene::Shade(const Ray &ray, int depth) const {
       }
     }
     const auto R = reflect(-V, N);
-    const auto reflect_ray = Ray{incident + R * Light::SHADOW_EPSILON, R};
+    const auto reflect_ray = Ray{incident + R * SHADOW_EPSILON, R};
     color += mat.specular * Shade(reflect_ray, depth - 1);
     return color;
   } else {

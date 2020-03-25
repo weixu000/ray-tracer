@@ -3,16 +3,10 @@
 
 #include <glm/glm.hpp>
 
-class Material;
-
 struct Ray {
   glm::vec3 origin, direction;
 
   glm::vec3 operator()(float t) const { return origin + t * direction; }
 };
 
-struct RayHit {
-  float t;
-  const Material *material = nullptr;
-  glm::vec3 normal;
-};
+static inline const float SHADOW_EPSILON = 1E-4f; // Avoid self-intersection

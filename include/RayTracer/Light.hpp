@@ -12,8 +12,6 @@ struct LightCast {
 
 class Light {
 public:
-  static inline glm::vec3 attenuation{1.f, 0.f, 0.f};
-
   Light() = default;
 
   explicit Light(const glm::vec3 &color);
@@ -21,7 +19,7 @@ public:
   virtual std::optional<LightCast>
   GenerateLightRay(const glm::vec3 &position, const Scene &scene) const = 0;
 
-  static inline const float SHADOW_EPSILON = 1E-4f;
+  static inline glm::vec3 attenuation{1.f, 0.f, 0.f};
 
 protected:
   const glm::vec3 color_{};
