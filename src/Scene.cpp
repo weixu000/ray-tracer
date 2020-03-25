@@ -1,5 +1,7 @@
 #include "RayTracer/Scene.h"
 
+#include <cstdint>
+
 #include "RayTracer/Ray.h"
 
 glm::vec3 Scene::Trace(const Ray &ray, int depth) const {
@@ -7,7 +9,7 @@ glm::vec3 Scene::Trace(const Ray &ray, int depth) const {
   auto color = glm::vec3(0.f);
   for (const auto &geo : geometries) {
     if (auto hit = geo->Intersect(ray)) {
-      if (!nearest || hit->t <= nearest->t) {
+      if (!nearest || hit->t + FLT_EPSILON < nearest->t) {
         nearest = hit;
         color = geo->GetMaterial().ambient; // TODO: shading
       }

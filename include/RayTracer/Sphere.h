@@ -12,7 +12,4 @@ public:
 
 private:
   std::optional<RayHit> IntersectLocal(const Ray &ray) const override;
-
-  glm::vec3 position_;
-  float radius_;
 };

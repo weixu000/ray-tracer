@@ -1,5 +1,7 @@
 #include "RayTracer/Mesh.h"
 
+#include <cstdint>
+
 Mesh::Mesh(const glm::mat4 &transform, const Material &material,
            const std::vector<glm::vec3> &verts,
            const std::vector<glm::ivec3> &tris)
@@ -12,14 +14,32 @@ Mesh::Mesh(const glm::mat4 &transform, const Material &material,
   }
 }
 
-static std::optional<RayHit> Moller(const Triangle &f, const Ray &ray) {
+/*
+ * https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+ */
+static std::optional<RayHit> Moller(const Triangle &triangle, const Ray &ray) {
   using namespace glm;
 
-  const auto &[v0, e1, e2, n] = f;
+  const auto &[v0, e1, e2, n] = triangle;
   const auto d = ray.direction, o = ray.origin;
-  const auto sol = inverse(mat3(e1, e2, -d)) * (o - v0);
-  const auto u = sol[0], v = sol[1], t = sol[2];
-  if (t >= 0 && u >= 0 && v >= 0 && u + v <= 1) {
+  const auto h = cross(d, e2);
+  const auto a = dot(e1, h);
+  if (a > -FLT_EPSILON && a < FLT_EPSILON) {
+    return std::nullopt; // This ray is parallel to this triangle.
+  }
+  const auto f = 1 / a;
+  const auto s = o - v0;
+  const auto u = f * dot(s, h);
+  if (u < 0 || u > 1) {
+    return std::nullopt;
+  }
+  const auto q = cross(s, e1);
+  const auto v = f * dot(d, q);
+  if (v < 0 || u + v > 1) {
+    return std::nullopt;
+  }
+  const auto t = f * dot(e2, q);
+  if (t > FLT_EPSILON) {
     return RayHit{t};
   } else {
     return std::nullopt;
@@ -30,7 +50,7 @@ std::optional<RayHit> Mesh::IntersectLocal(const Ray &ray) const {
   std::optional<RayHit> nearest;
   for (const auto &f : triangles_) {
     if (auto hit = Moller(f, ray)) {
-      if (!nearest || hit->t <= nearest->t) {
+      if (!nearest || hit->t + FLT_EPSILON < nearest->t) {
         nearest = hit;
       }
     }
