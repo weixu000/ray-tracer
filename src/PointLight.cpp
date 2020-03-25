@@ -2,6 +2,9 @@
 
 #include "RayTracer/Scene.hpp"
 
+PointLight::PointLight(const glm::vec3 &color, const glm::vec3 &position)
+    : Light(color), position_(position) {}
+
 std::optional<LightCast>
 PointLight::GenerateLightRay(const glm::vec3 &position,
                              const Scene &scene) const {
@@ -12,7 +15,7 @@ PointLight::GenerateLightRay(const glm::vec3 &position,
     const auto dl = length(d);
     const auto d_p = glm::vec3(1.f, dl, dl * dl);
     const auto attenuation = dot(Light::attenuation, d_p);
-    return LightCast{color / attenuation, d};
+    return LightCast{color_ / attenuation, d};
   } else {
     return std::nullopt;
   }

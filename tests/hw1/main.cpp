@@ -138,13 +138,13 @@ int main(int argc, char *argv[]) {
       FinishMesh();
       transform_stack.pop_back();
     } else if (command == "directional") {
-      DirectionalLight light{};
-      ss >> light.direction >> light.color;
-      scene.lights.push_back(make_unique<DirectionalLight>(light));
+      glm::vec3 direction, color;
+      ss >> direction >> color;
+      scene.lights.push_back(make_unique<DirectionalLight>(color, direction));
     } else if (command == "point") {
-      PointLight light{};
-      ss >> light.position_ >> light.color;
-      scene.lights.push_back(make_unique<PointLight>(light));
+      glm::vec3 position, color;
+      ss >> position >> color;
+      scene.lights.push_back(make_unique<PointLight>(color, position));
     } else if (command == "attenuation") {
       ss >> Light::attenuation;
     } else if (command == "ambient") {

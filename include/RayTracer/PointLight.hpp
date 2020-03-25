@@ -5,8 +5,11 @@
 
 class PointLight : public Light {
 public:
-  glm::vec3 position_;
+  PointLight(const glm::vec3 &color, const glm::vec3 &position);
 
   std::optional<LightCast> GenerateLightRay(const glm::vec3 &position,
                                             const Scene &scene) const override;
+
+private:
+  glm::vec3 position_;
 };
