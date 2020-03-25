@@ -15,7 +15,7 @@
 #include <RayTracer/Material.hpp>
 #include <RayTracer/Mesh.hpp>
 #include <RayTracer/PointLight.hpp>
-#include <RayTracer/Renderer.hpp>
+#include <RayTracer/Sampler.hpp>
 #include <RayTracer/Scene.hpp>
 #include <RayTracer/Sphere.hpp>
 
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
                   glm::vec3(0.f, 0.f, 0.f), 1.f);
   scene.geometries.push_back(make_unique<Sphere>(move(s)));
 
-  Renderer renderer;
+  Sampler renderer;
   auto image = renderer.Render(scene);
   OutputPPM(image);
 

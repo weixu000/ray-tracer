@@ -14,7 +14,7 @@
 #include <RayTracer/Material.hpp>
 #include <RayTracer/Mesh.hpp>
 #include <RayTracer/PointLight.hpp>
-#include <RayTracer/Renderer.hpp>
+#include <RayTracer/Sampler.hpp>
 #include <RayTracer/Scene.hpp>
 #include <RayTracer/Sphere.hpp>
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
   FinishMesh();
 
   cout << "Rendering..." << endl;
-  Renderer renderer;
+  Sampler renderer;
   auto image = renderer.Render(scene);
   OutputPPM(image);
 

@@ -1,10 +1,10 @@
-#include "RayTracer/Renderer.hpp"
+#include "RayTracer/Sampler.hpp"
 
 #include <vector>
 
 #include <glm/glm.hpp>
 
-std::vector<glm::u8vec3> Renderer::Render(const Scene &scene) {
+std::vector<glm::u8vec3> Sampler::Render(const Scene &scene) {
   const auto w = scene.width;
   const auto h = scene.height;
 
