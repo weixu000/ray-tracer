@@ -10,6 +10,5 @@ public:
   Sphere(const glm::mat4 &transform, const Material &material,
          const glm::vec3 &position, float radius);
 
-private:
-  std::optional<RayHit> IntersectLocal(const Ray &ray) const override;
+  std::optional<RayHit> Intersect(const Ray &ray) const override;
 };

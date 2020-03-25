@@ -17,8 +17,8 @@ public:
        const std::vector<glm::vec3> &verts,
        const std::vector<glm::ivec3> &tris);
 
-private:
-  std::optional<RayHit> IntersectLocal(const Ray &ray) const override;
+  std::optional<RayHit> Intersect(const Ray &ray) const override;
 
+private:
   std::vector<Triangle> triangles_;
 };

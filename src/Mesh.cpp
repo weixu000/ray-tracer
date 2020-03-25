@@ -2,15 +2,19 @@
 
 #include <cstdint>
 
+using namespace glm;
+
 Mesh::Mesh(const glm::mat4 &transform, const Material &material,
            const std::vector<glm::vec3> &verts,
            const std::vector<glm::ivec3> &tris)
     : Geometry(transform, material) {
   triangles_.reserve(tris.size());
   for (const auto &f : tris) {
-    const auto e1 = verts[f[1]] - verts[f[0]], e2 = verts[f[2]] - verts[f[0]];
-    triangles_.push_back(
-        {verts[f[0]], e1, e2, glm::normalize(glm::cross(e1, e2))});
+    const auto v0 = vec3(LocalToWorld(vec4(verts[f[0]], 1.f))),
+               v1 = vec3(LocalToWorld(vec4(verts[f[1]], 1.f))),
+               v2 = vec3(LocalToWorld(vec4(verts[f[2]], 1.f)));
+    const auto e1 = v1 - v0, e2 = v2 - v0;
+    triangles_.push_back({v0, e1, e2, normalize(cross(e1, e2))});
   }
 }
 
@@ -18,8 +22,6 @@ Mesh::Mesh(const glm::mat4 &transform, const Material &material,
  * https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
  */
 static std::optional<RayHit> Moller(const Triangle &triangle, const Ray &ray) {
-  using namespace glm;
-
   const auto &[v0, e1, e2, n] = triangle;
   const auto d = ray.direction, o = ray.origin;
   const auto h = cross(d, e2);
@@ -46,7 +48,7 @@ static std::optional<RayHit> Moller(const Triangle &triangle, const Ray &ray) {
   }
 }
 
-std::optional<RayHit> Mesh::IntersectLocal(const Ray &ray) const {
+std::optional<RayHit> Mesh::Intersect(const Ray &ray) const {
   std::optional<RayHit> nearest;
   for (const auto &f : triangles_) {
     if (auto hit = Moller(f, ray)) {

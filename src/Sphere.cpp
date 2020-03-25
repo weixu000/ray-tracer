@@ -11,10 +11,10 @@ Sphere::Sphere(const glm::mat4 &transform, const Material &material,
                const glm::vec3 &position, float radius)
     : Geometry(scale(translate(transform, position), vec3(radius)), material) {}
 
-std::optional<RayHit> Sphere::IntersectLocal(const Ray &ray) const {
-
-  const auto d = ray.direction;
-  const auto o = ray.origin;
+std::optional<RayHit> Sphere::Intersect(const Ray &ray) const {
+  const auto local_ray = WorldToLocal(ray);
+  const auto d = local_ray.direction;
+  const auto o = local_ray.origin;
   const auto d_o = dot(d, o);
   const auto d2 = length2(d);
   const auto discriminant = d_o * d_o - (length2(o) - 1) * d2;

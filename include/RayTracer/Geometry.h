@@ -12,13 +12,16 @@ public:
 
   Geometry(const glm::mat4 &transform, const Material &material);
 
-  std::optional<RayHit> Intersect(const Ray &ray) const;
+  virtual std::optional<RayHit> Intersect(const Ray &ray) const = 0;
 
   const Material &GetMaterial() const;
 
-private:
-  virtual std::optional<RayHit> IntersectLocal(const Ray &ray) const = 0;
+protected:
+  Ray WorldToLocal(const Ray &ray) const;
 
-  glm::mat4 world_to_local_;
+  glm::vec4 LocalToWorld(const glm::vec4 &v) const;
+
+private:
+  glm::mat4 world_, local_;
   Material material_;
 };
