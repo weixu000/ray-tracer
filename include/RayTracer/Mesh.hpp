@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/Geometry.h"
+#include "RayTracer/Geometry.hpp"
 
 struct Triangle {
   glm::vec3 v, e1, e2, normal;

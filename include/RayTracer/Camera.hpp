@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-#include "RayTracer/Ray.h"
+#include "RayTracer/Ray.hpp"
 
 class Camera {
 public:

@@ -1,4 +1,4 @@
-#include "RayTracer/Camera.h"
+#include "RayTracer/Camera.hpp"
 
 Camera::Camera(const glm::vec3 &look_from, const glm::vec3 &look_at,
                const glm::vec3 &up, float fov)

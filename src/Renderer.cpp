@@ -1,4 +1,4 @@
-#include "RayTracer/Renderer.h"
+#include "RayTracer/Renderer.hpp"
 
 #include <vector>
 

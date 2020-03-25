@@ -3,8 +3,8 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/Material.h"
-#include "RayTracer/Ray.h"
+#include "RayTracer/Material.hpp"
+#include "RayTracer/Ray.hpp"
 
 class Geometry {
 public:

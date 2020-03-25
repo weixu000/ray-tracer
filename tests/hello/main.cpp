@@ -10,14 +10,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-#include <RayTracer/DirectionalLight.h>
-#include <RayTracer/Light.h>
-#include <RayTracer/Material.h>
-#include <RayTracer/Mesh.h>
-#include <RayTracer/PointLight.h>
-#include <RayTracer/Renderer.h>
-#include <RayTracer/Scene.h>
-#include <RayTracer/Sphere.h>
+#include <RayTracer/DirectionalLight.hpp>
+#include <RayTracer/Light.hpp>
+#include <RayTracer/Material.hpp>
+#include <RayTracer/Mesh.hpp>
+#include <RayTracer/PointLight.hpp>
+#include <RayTracer/Renderer.hpp>
+#include <RayTracer/Scene.hpp>
+#include <RayTracer/Sphere.hpp>
 
 using namespace std;
 

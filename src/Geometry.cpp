@@ -1,4 +1,4 @@
-#include "RayTracer/Geometry.h"
+#include "RayTracer/Geometry.hpp"
 
 Geometry::Geometry(const glm::mat4 &transform, const Material &material)
     : world_(transform), local_(glm::inverse(transform)), material_(material) {}

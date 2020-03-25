@@ -1,4 +1,4 @@
-#include "RayTracer/Sphere.h"
+#include "RayTracer/Sphere.hpp"
 
 #include <cstdint>
 

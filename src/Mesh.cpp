@@ -1,4 +1,4 @@
-#include "RayTracer/Mesh.h"
+#include "RayTracer/Mesh.hpp"
 
 #include <cstdint>
 

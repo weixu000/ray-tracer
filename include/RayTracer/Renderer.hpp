@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/Scene.h"
+#include "RayTracer/Scene.hpp"
 
 class Renderer {
 public:

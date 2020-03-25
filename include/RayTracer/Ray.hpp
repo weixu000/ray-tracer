@@ -3,7 +3,7 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/Material.h"
+#include "RayTracer/Material.hpp"
 
 struct Ray {
   glm::vec3 origin, direction;

@@ -1,8 +1,8 @@
-#include "RayTracer/Scene.h"
+#include "RayTracer/Scene.hpp"
 
 #include <cstdint>
 
-#include "RayTracer/Ray.h"
+#include "RayTracer/Ray.hpp"
 
 glm::vec3 Scene::Trace(const Ray &ray, int depth) const {
   std::optional<RayHit> nearest;
