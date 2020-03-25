@@ -10,10 +10,12 @@
 #include "RayTracer/Geometry.h"
 #include "RayTracer/Light.h"
 #include "RayTracer/Material.h"
+#include "RayTracer/Ray.h"
 
-struct Scene {
+class Scene {
+public:
   int width, height;
-  int depth = 5;
+  int max_depth = 5;
   std::string output_file;
   Camera camera;
 
@@ -23,4 +25,6 @@ struct Scene {
   std::vector<std::unique_ptr<Geometry>> geometries;
 
   std::vector<std::unique_ptr<Light>> lights;
+
+  glm::vec3 Trace(const Ray &ray, int depth) const;
 };

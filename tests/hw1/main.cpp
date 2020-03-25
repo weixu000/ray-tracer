@@ -14,17 +14,18 @@
 #include <RayTracer/Material.h>
 #include <RayTracer/Mesh.h>
 #include <RayTracer/PointLight.h>
+#include <RayTracer/Renderer.h>
 #include <RayTracer/Scene.h>
 #include <RayTracer/Sphere.h>
 
 using namespace std;
 
-static Scene info;
+static Scene scene;
 static vector<glm::mat4> transform_stack;
-static Mesh current_mesh;
+static std::vector<glm::ivec3> triangle_list;
 static Material current_material;
 
-static glm::mat4 stack_matrices() {
+static glm::mat4 StackMatrices() {
   glm::mat4 m(1.0f);
   for (const auto &x : transform_stack) {
     m *= x;
@@ -32,12 +33,21 @@ static glm::mat4 stack_matrices() {
   return m;
 }
 
-static void finish_mesh() {
-  if (!current_mesh.triangles.empty()) {
-    current_mesh.transform = stack_matrices();
-    current_mesh.material = current_material;
-    info.geometries.push_back(make_unique<Mesh>(move(current_mesh)));
+static void FinishMesh() {
+  if (!triangle_list.empty()) {
+    Mesh m(StackMatrices(), current_material, scene.verts, triangle_list);
+    scene.geometries.push_back(make_unique<Mesh>(move(m)));
+    triangle_list.clear();
   }
+}
+
+void OutputPPM(const vector<glm::u8vec3> &image) {
+  ofstream fs(scene.output_file, ios::out | ios::binary);
+  fs << "P6" << endl
+     << scene.width << " " << scene.height << endl
+     << 255 << endl;
+  fs.write(reinterpret_cast<const char *>(image.data()),
+           scene.width * scene.height * sizeof(glm::u8vec3));
 }
 
 template <class CharT, class Traits, glm::length_t L, typename T,
@@ -71,30 +81,33 @@ int main(int argc, char *argv[]) {
     string command;
     ss >> command;
     if (command == "size") {
-      ss >> info.width >> info.height;
+      ss >> scene.width >> scene.height;
     } else if (command == "maxdepth") {
-      ss >> info.depth;
+      ss >> scene.max_depth;
     } else if (command == "output") {
-      ss >> info.output_file;
+      scene.output_file = "test.ppm";
+      //      ss >> scene.output_file;
     } else if (command == "camera") {
-      ss >> info.camera.look_from >> info.camera.look_at >> info.camera.up >>
-          info.camera.fov;
+      glm::vec3 look_from, look_at, up;
+      float fov;
+      ss >> look_from >> look_at >> up >> fov;
+      scene.camera = Camera(look_from, look_at, up, fov);
     } else if (command == "sphere") {
-      Sphere s;
-      ss >> s.position >> s.radius;
-      s.transform = stack_matrices();
-      s.material = current_material;
-      info.geometries.push_back(make_unique<Sphere>(move(s)));
+      glm::vec3 position;
+      float rad;
+      ss >> position >> rad;
+      auto s = Sphere(StackMatrices(), current_material, position, rad);
+      scene.geometries.push_back(make_unique<Sphere>(move(s)));
     } else if (command == "maxverts") {
-      ss >> info.max_num_verts;
+      ss >> scene.max_num_verts;
     } else if (command == "vertex") {
       glm::vec3 v;
       ss >> v;
-      info.verts.push_back(v);
+      scene.verts.push_back(v);
     } else if (command == "tri") {
       glm::ivec3 t;
       ss >> t;
-      current_mesh.triangles.push_back(t);
+      triangle_list.push_back(t);
     } else if (command == "maxvertnorms") {
       continue; // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {
@@ -102,57 +115,64 @@ int main(int argc, char *argv[]) {
     } else if (command == "trinormal") {
       continue; // TODO: implement triangle-with-normal
     } else if (command == "translate") {
-      finish_mesh();
+      FinishMesh();
       glm::vec3 v;
       ss >> v;
-      glm::translate(transform_stack.back(), v);
+      transform_stack.back() = glm::translate(transform_stack.back(), v);
     } else if (command == "rotate") {
-      finish_mesh();
+      FinishMesh();
       glm::vec3 v;
       float angle;
       ss >> v >> angle;
-      glm::rotate(transform_stack.back(), angle, v);
+      transform_stack.back() =
+          glm::rotate(transform_stack.back(), glm::radians(angle), v);
     } else if (command == "scale") {
-      finish_mesh();
+      FinishMesh();
       glm::vec3 v;
       ss >> v;
-      glm::scale(transform_stack.back(), v);
+      transform_stack.back() = glm::scale(transform_stack.back(), v);
     } else if (command == "pushTransform") {
-      finish_mesh();
+      FinishMesh();
       transform_stack.emplace_back(1.0f);
     } else if (command == "popTransform") {
-      finish_mesh();
+      FinishMesh();
       transform_stack.pop_back();
     } else if (command == "directional") {
       DirectionalLight light{};
       ss >> light.direction >> light.color;
-      info.lights.push_back(make_unique<DirectionalLight>(light));
+      scene.lights.push_back(make_unique<DirectionalLight>(light));
     } else if (command == "point") {
       PointLight light{};
       ss >> light.position >> light.color;
-      info.lights.push_back(make_unique<PointLight>(light));
+      scene.lights.push_back(make_unique<PointLight>(light));
     } else if (command == "attenuation") {
       ss >> Light::attenuation;
     } else if (command == "ambient") {
-      finish_mesh();
+      FinishMesh();
       ss >> current_material.ambient;
     } else if (command == "diffuse") {
-      finish_mesh();
+      FinishMesh();
       ss >> current_material.diffuse;
     } else if (command == "specular") {
-      finish_mesh();
+      FinishMesh();
       ss >> current_material.specular;
     } else if (command == "shininess") {
-      finish_mesh();
+      FinishMesh();
       ss >> current_material.shininess;
     } else if (command == "emission") {
-      finish_mesh();
+      FinishMesh();
       ss >> current_material.emission;
     } else {
       cerr << "Unknown command in input: " << line << endl;
       return EXIT_FAILURE;
     }
   }
-  finish_mesh();
+  FinishMesh();
+
+  cout << "Rendering..." << endl;
+  Renderer renderer;
+  auto image = renderer.Render(scene);
+  OutputPPM(image);
+
   return EXIT_SUCCESS;
 }
