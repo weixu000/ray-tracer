@@ -1,0 +1,19 @@
+#include "RayTracer/PointLight.hpp"
+
+#include "RayTracer/Scene.hpp"
+
+std::optional<LightCast>
+PointLight::GenerateLightRay(const glm::vec3 &position,
+                             const Scene &scene) const {
+  using namespace glm;
+  const auto d = position - position_;
+  const auto ray = Ray{position_, d};
+  if (auto hit = scene.Trace(ray, 0); !hit || hit->t + SHADOW_EPSILON > 1.f) {
+    const auto dl = length(d);
+    const auto d_p = glm::vec3(1.f, dl, dl * dl);
+    const auto attenuation = dot(Light::attenuation, d_p);
+    return LightCast{color / attenuation, d};
+  } else {
+    return std::nullopt;
+  }
+}

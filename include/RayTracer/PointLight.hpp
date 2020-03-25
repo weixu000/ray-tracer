@@ -3,6 +3,10 @@
 
 #include "RayTracer/Light.hpp"
 
-struct PointLight : public Light {
-  glm::vec3 position;
+class PointLight : public Light {
+public:
+  glm::vec3 position_;
+
+  std::optional<LightCast> GenerateLightRay(const glm::vec3 &position,
+                                            const Scene &scene) const override;
 };

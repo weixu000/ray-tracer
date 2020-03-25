@@ -42,7 +42,7 @@ static std::optional<RayHit> Moller(const Triangle &triangle, const Ray &ray) {
   }
   const auto t = f * dot(e2, q);
   if (t > FLT_EPSILON) {
-    return RayHit{t};
+    return RayHit{t, nullptr, n};
   } else {
     return std::nullopt;
   }
@@ -56,6 +56,9 @@ std::optional<RayHit> Mesh::Intersect(const Ray &ray) const {
         nearest = hit;
       }
     }
+  }
+  if (nearest) {
+    nearest->material = &material_;
   }
   return nearest;
 }

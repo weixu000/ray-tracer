@@ -14,14 +14,13 @@ public:
 
   virtual std::optional<RayHit> Intersect(const Ray &ray) const = 0;
 
-  const Material &GetMaterial() const;
-
 protected:
   Ray WorldToLocal(const Ray &ray) const;
 
   glm::vec4 LocalToWorld(const glm::vec4 &v) const;
 
+  Material material_;
+
 private:
   glm::mat4 world_, local_;
-  Material material_;
 };

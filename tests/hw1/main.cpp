@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
       scene.lights.push_back(make_unique<DirectionalLight>(light));
     } else if (command == "point") {
       PointLight light{};
-      ss >> light.position >> light.color;
+      ss >> light.position_ >> light.color;
       scene.lights.push_back(make_unique<PointLight>(light));
     } else if (command == "attenuation") {
       ss >> Light::attenuation;

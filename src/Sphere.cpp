@@ -22,13 +22,13 @@ std::optional<RayHit> Sphere::Intersect(const Ray &ray) const {
     return std::nullopt;
   }
   const auto sqrt_disc = sqrt(discriminant);
-  const auto t1 = (-d_o - sqrt_disc) / d2;
-  if (t1 > FLT_EPSILON) {
-    return RayHit{t1};
+  if (const auto t1 = (-d_o - sqrt_disc) / d2; t1 > FLT_EPSILON) {
+    const auto normal = vec3(LocalToWorld(vec4(local_ray(t1), 0.0f)));
+    return RayHit{t1, &material_, normal};
   }
-  const auto t2 = (-d_o + sqrt_disc) / d2;
-  if (t2 > FLT_EPSILON) {
-    return RayHit{t2};
+  if (const auto t2 = (-d_o + sqrt_disc) / d2; t2 > FLT_EPSILON) {
+    const auto normal = vec3(LocalToWorld(vec4(local_ray(t2), 0.0f)));
+    return RayHit{t2, &material_, normal};
   } else {
     return std::nullopt;
   }
