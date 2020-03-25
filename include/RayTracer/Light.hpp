@@ -21,8 +21,8 @@ public:
   virtual std::optional<LightCast>
   GenerateLightRay(const glm::vec3 &position, const Scene &scene) const = 0;
 
+  static inline const float SHADOW_EPSILON = 1E-4f;
+
 protected:
   const glm::vec3 color_{};
-
-  static inline const float SHADOW_EPSILON = 1E-4f;
 };

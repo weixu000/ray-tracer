@@ -12,7 +12,7 @@ DirectionalLight::GenerateLightRay(const glm::vec3 &position,
   using namespace glm;
   const auto d = normalize(direction_);
   const auto ray = Ray{position - d * SHADOW_EPSILON, -d};
-  if (auto hit = scene.Trace(ray, 0); !hit) {
+  if (auto hit = scene.Trace(ray); !hit) {
     return LightCast{color_, d};
   } else {
     return std::nullopt;

@@ -11,7 +11,7 @@ PointLight::GenerateLightRay(const glm::vec3 &position,
   using namespace glm;
   const auto d = position - position_;
   const auto ray = Ray{position_, d};
-  if (auto hit = scene.Trace(ray, 0); !hit || hit->t + SHADOW_EPSILON > 1.f) {
+  if (auto hit = scene.Trace(ray); !hit || hit->t + SHADOW_EPSILON > 1.f) {
     const auto dl = length(d);
     const auto d_p = glm::vec3(1.f, dl, dl * dl);
     const auto attenuation = dot(Light::attenuation, d_p);

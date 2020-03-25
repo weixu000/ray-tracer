@@ -26,7 +26,7 @@ public:
 
   std::vector<std::unique_ptr<Light>> lights;
 
-  std::optional<RayHit> Trace(const Ray &ray, int depth) const;
+  std::optional<RayHit> Trace(const Ray &ray) const;
 
   glm::vec3 Shade(const Ray &ray, int depth) const;
 };
