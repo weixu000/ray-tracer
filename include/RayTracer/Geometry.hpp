@@ -25,8 +25,11 @@ protected:
 
   glm::vec4 LocalToWorld(const glm::vec4 &v) const;
 
+  glm::vec3 NormalToWorld(const glm::vec3 &n) const;
+
   const Material material_{};
 
 private:
   const glm::mat4 world_{}, local_{};
+  const glm::mat3 normal_world_{};
 };
