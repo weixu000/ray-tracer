@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <RayTracer/DirectionalLight.hpp>
+#include <RayTracer/ImageWriter.hpp>
 #include <RayTracer/Light.hpp>
 #include <RayTracer/Material.hpp>
 #include <RayTracer/Mesh.hpp>
@@ -39,15 +40,6 @@ static void FinishMesh() {
     scene.geometries.push_back(make_unique<Mesh>(move(m)));
     triangle_list.clear();
   }
-}
-
-void OutputPPM(const vector<glm::u8vec3> &image) {
-  ofstream fs(scene.output_file, ios::out | ios::binary);
-  fs << "P6" << endl
-     << scene.width << " " << scene.height << endl
-     << 255 << endl;
-  fs.write(reinterpret_cast<const char *>(image.data()),
-           scene.width * scene.height * sizeof(glm::u8vec3));
 }
 
 template <class CharT, class Traits, glm::length_t L, typename T,
@@ -85,8 +77,7 @@ int main(int argc, char *argv[]) {
     } else if (command == "maxdepth") {
       ss >> scene.max_depth;
     } else if (command == "output") {
-      scene.output_file = "test.ppm";
-      //      ss >> scene.output_file;
+      ss >> scene.output_file;
     } else if (command == "camera") {
       glm::vec3 look_from, look_at, up;
       float fov;
@@ -172,7 +163,7 @@ int main(int argc, char *argv[]) {
   cout << "Rendering..." << endl;
   Sampler renderer;
   auto image = renderer.Render(scene);
-  OutputPPM(image);
+  ImageWriter::WriteTo(scene.output_file, scene.width, scene.height, image);
 
   return EXIT_SUCCESS;
 }

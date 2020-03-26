@@ -1,3 +1,6 @@
 [submodule "glm"]
 	path = extern/glm
 	url = https://github.com/g-truc/glm.git
+[submodule "stb-cmake"]
+	path = extern/stb-cmake
+	url = https://github.com/weixu000/stb-cmake.git
