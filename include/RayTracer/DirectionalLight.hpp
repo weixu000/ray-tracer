@@ -11,5 +11,5 @@ public:
                                             const Scene &scene) const override;
 
 private:
-  glm::vec3 direction_;
+  glm::vec3 direction_; // Direction towards the light source
 };

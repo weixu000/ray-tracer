@@ -13,9 +13,9 @@ std::optional<LightCast>
 DirectionalLight::GenerateLightRay(const glm::vec3 &position,
                                    const Scene &scene) const {
   const auto d = direction_;
-  const auto ray = Ray{position - d * SHADOW_EPSILON, -d};
+  const auto ray = Ray{position + d * SHADOW_EPSILON, d};
   if (!scene.Trace(ray)) {
-    return LightCast{color_, d};
+    return LightCast{color_, -d};
   } else {
     return std::nullopt;
   }
