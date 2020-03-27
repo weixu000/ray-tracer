@@ -8,14 +8,21 @@ Mesh::Mesh(const glm::mat4 &transform, const Material &material,
            const std::vector<glm::vec3> &verts,
            const std::vector<glm::ivec3> &tris)
     : Geometry(transform, material) {
+  std::vector<AABB> boxes;
+  boxes.reserve(tris.size());
   triangles_.reserve(tris.size());
   for (const auto &f : tris) {
     const auto v0 = vec3(LocalToWorld(vec4(verts[f[0]], 1.f))),
                v1 = vec3(LocalToWorld(vec4(verts[f[1]], 1.f))),
                v2 = vec3(LocalToWorld(vec4(verts[f[2]], 1.f)));
+
+    boxes.push_back(AABB{min(v0, min(v1, v2)), max(v0, max(v1, v2))});
+
     const auto e1 = v1 - v0, e2 = v2 - v0;
     triangles_.push_back({v0, e1, e2, normalize(cross(e1, e2))});
   }
+
+  bvh = std::move(BVH(boxes));
 }
 
 /*
@@ -49,16 +56,13 @@ static std::optional<RayHit> Moller(const Triangle &triangle, const Ray &ray) {
 }
 
 std::optional<RayHit> Mesh::Intersect(const Ray &ray) const {
-  std::optional<RayHit> nearest;
-  for (const auto &f : triangles_) {
-    if (auto hit = Moller(f, ray)) {
-      if (!nearest || hit->t + FLT_EPSILON < nearest->t) {
-        nearest = hit;
-      }
-    }
+  const auto hit = bvh.Traverse(
+      ray, [&](const size_t f) { return Moller(triangles_[f], ray); });
+  if (hit) {
+    auto nearest = hit->first;
+    nearest.material = &material_;
+    return nearest;
+  } else {
+    return std::nullopt;
   }
-  if (nearest) {
-    nearest->material = &material_;
-  }
-  return nearest;
 }

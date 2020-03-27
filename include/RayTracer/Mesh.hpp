@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 
+#include "RayTracer/BVH.hpp"
 #include "RayTracer/Geometry.hpp"
 
 struct Triangle {
@@ -21,4 +22,6 @@ public:
 
 private:
   std::vector<Triangle> triangles_;
+
+  BVH bvh;
 };

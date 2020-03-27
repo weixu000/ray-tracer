@@ -5,12 +5,7 @@
 
 #include "RayTracer/Material.hpp"
 #include "RayTracer/Ray.hpp"
-
-struct RayHit {
-  float t;
-  const Material *material = nullptr;
-  glm::vec3 normal;
-};
+#include "RayTracer/RayHit.hpp"
 
 class Geometry {
 public:
