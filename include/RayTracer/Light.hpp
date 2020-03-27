@@ -16,6 +16,8 @@ public:
 
   explicit Light(const glm::vec3 &color);
 
+  virtual ~Light() = default;
+
   virtual std::optional<LightCast>
   GenerateLightRay(const glm::vec3 &position, const Scene &scene) const = 0;
 

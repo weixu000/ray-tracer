@@ -13,6 +13,8 @@ public:
 
   Geometry(const glm::mat4 &transform, const Material &material);
 
+  virtual ~Geometry() = default;
+
   virtual std::optional<RayHit> Intersect(const Ray &ray) const = 0;
 
 protected:
