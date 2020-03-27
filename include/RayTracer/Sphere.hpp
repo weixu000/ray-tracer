@@ -7,8 +7,7 @@ class Sphere : public Geometry {
 public:
   Sphere() = default;
 
-  Sphere(const glm::mat4 &transform, const Material &material,
-         const glm::vec3 &position, float radius);
+  Sphere(const glm::mat4 &transform, const glm::vec3 &position, float radius);
 
   std::optional<RayHit> Intersect(const Ray &ray) const override;
 };

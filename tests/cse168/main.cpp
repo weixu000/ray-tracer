@@ -36,8 +36,8 @@ static glm::mat4 StackMatrices() {
 
 static void FinishMesh() {
   if (!triangle_list.empty()) {
-    Mesh m(StackMatrices(), current_material, scene.verts, triangle_list);
-    scene.geometries.push_back(make_unique<Mesh>(move(m)));
+    Mesh m(StackMatrices(), scene.verts, triangle_list);
+    scene.primitives.emplace_back(make_unique<Mesh>(move(m)), current_material);
     triangle_list.clear();
   }
 }
@@ -87,8 +87,9 @@ int main(int argc, char *argv[]) {
       glm::vec3 position;
       float rad;
       ss >> position >> rad;
-      auto s = Sphere(StackMatrices(), current_material, position, rad);
-      scene.geometries.push_back(make_unique<Sphere>(move(s)));
+      auto s = Sphere(StackMatrices(), position, rad);
+      scene.primitives.emplace_back(make_unique<Sphere>(move(s)),
+                                    current_material);
     } else if (command == "maxverts") {
       ss >> scene.max_num_verts;
     } else if (command == "vertex") {

@@ -7,9 +7,9 @@
 
 using namespace glm;
 
-Sphere::Sphere(const glm::mat4 &transform, const Material &material,
-               const glm::vec3 &position, float radius)
-    : Geometry(scale(translate(transform, position), vec3(radius)), material) {}
+Sphere::Sphere(const glm::mat4 &transform, const glm::vec3 &position,
+               float radius)
+    : Geometry(scale(translate(transform, position), vec3(radius))) {}
 
 std::optional<RayHit> Sphere::Intersect(const Ray &ray) const {
   const auto local_ray = WorldToLocal(ray);
@@ -24,11 +24,11 @@ std::optional<RayHit> Sphere::Intersect(const Ray &ray) const {
   const auto sqrt_disc = sqrt(discriminant);
   if (const auto t1 = (-d_o - sqrt_disc) / d2; t1 > FLT_EPSILON) {
     const auto normal = NormalToWorld(local_ray(t1));
-    return RayHit{t1, &material_, normal};
+    return RayHit(t1, normal);
   }
   if (const auto t2 = (-d_o + sqrt_disc) / d2; t2 > FLT_EPSILON) {
     const auto normal = NormalToWorld(local_ray(t2));
-    return RayHit{t2, &material_, normal};
+    return RayHit(t2, normal);
   } else {
     return std::nullopt;
   }

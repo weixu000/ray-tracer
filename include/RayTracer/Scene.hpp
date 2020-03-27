@@ -7,10 +7,9 @@
 #include <glm/glm.hpp>
 
 #include "RayTracer/Camera.hpp"
-#include "RayTracer/Geometry.hpp"
 #include "RayTracer/Light.hpp"
-#include "RayTracer/Material.hpp"
 #include "RayTracer/Ray.hpp"
+#include <RayTracer/Primitive.hpp>
 
 class Scene {
 public:
@@ -22,7 +21,7 @@ public:
   int max_num_verts;
   std::vector<glm::vec3> verts;
 
-  std::vector<std::unique_ptr<Geometry>> geometries;
+  std::vector<Primitive> primitives;
 
   std::vector<std::unique_ptr<Light>> lights;
 

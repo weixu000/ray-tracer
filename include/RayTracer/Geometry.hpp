@@ -3,7 +3,6 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/Material.hpp"
 #include "RayTracer/Ray.hpp"
 #include "RayTracer/RayHit.hpp"
 
@@ -11,7 +10,7 @@ class Geometry {
 public:
   Geometry() = default;
 
-  Geometry(const glm::mat4 &transform, const Material &material);
+  explicit Geometry(const glm::mat4 &transform);
 
   virtual ~Geometry() = default;
 
@@ -23,8 +22,6 @@ protected:
   glm::vec4 LocalToWorld(const glm::vec4 &v) const;
 
   glm::vec3 NormalToWorld(const glm::vec3 &n) const;
-
-  const Material material_{};
 
 private:
   const glm::mat4 world_{}, local_{};

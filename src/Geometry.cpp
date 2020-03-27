@@ -2,8 +2,8 @@
 
 using namespace glm;
 
-Geometry::Geometry(const glm::mat4 &transform, const Material &material)
-    : material_(material), world_(transform), local_(inverse(transform)),
+Geometry::Geometry(const glm::mat4 &transform)
+    : world_(transform), local_(inverse(transform)),
       normal_world_(inverse(transpose(mat3(transform)))) {}
 
 Ray Geometry::WorldToLocal(const Ray &ray) const {

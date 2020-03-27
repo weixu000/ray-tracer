@@ -4,10 +4,9 @@
 
 using namespace glm;
 
-Mesh::Mesh(const glm::mat4 &transform, const Material &material,
-           const std::vector<glm::vec3> &verts,
+Mesh::Mesh(const glm::mat4 &transform, const std::vector<glm::vec3> &verts,
            const std::vector<glm::ivec3> &tris)
-    : Geometry(transform, material) {
+    : Geometry(transform) {
   std::vector<AABB> boxes;
   boxes.reserve(tris.size());
   triangles_.reserve(tris.size());
@@ -49,7 +48,7 @@ static std::optional<RayHit> Moller(const Triangle &triangle, const Ray &ray) {
   }
   const auto t = f * dot(e2, q);
   if (t > FLT_EPSILON) {
-    return RayHit{t, nullptr, n};
+    return RayHit(t, n);
   } else {
     return std::nullopt;
   }
@@ -59,9 +58,7 @@ std::optional<RayHit> Mesh::Intersect(const Ray &ray) const {
   const auto hit = bvh.Traverse(
       ray, [&](const size_t f) { return Moller(triangles_[f], ray); });
   if (hit) {
-    auto nearest = hit->first;
-    nearest.material = &material_;
-    return nearest;
+    return hit->first;
   } else {
     return std::nullopt;
   }

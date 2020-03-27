@@ -23,9 +23,9 @@ int main() {
 
   Material material;
   material.ambient = glm::vec3(1.f);
-  auto s = Sphere(glm::translate(glm::vec3(0.f)), material,
-                  glm::vec3(0.f, 0.f, 0.f), 1.f);
-  scene.geometries.push_back(make_unique<Sphere>(move(s)));
+  auto s =
+      Sphere(glm::translate(glm::vec3(0.f)), glm::vec3(0.f, 0.f, 0.f), 1.f);
+  scene.primitives.emplace_back(make_unique<Sphere>(move(s)), material);
 
   Sampler renderer;
   auto image = renderer.Render(scene);
