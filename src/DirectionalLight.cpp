@@ -1,4 +1,4 @@
-#include "RayTracer/DirectionalLight.hpp"
+#include "RayTracer/lights/DirectionalLight.hpp"
 
 #include "RayTracer/Ray.hpp"
 #include "RayTracer/Scene.hpp"

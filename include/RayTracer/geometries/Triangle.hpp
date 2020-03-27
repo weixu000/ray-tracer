@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/Geometry.hpp"
+#include "RayTracer/geometries/Geometry.hpp"
 
 class Triangle : public Geometry {
 public:

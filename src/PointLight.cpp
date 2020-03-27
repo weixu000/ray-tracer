@@ -1,4 +1,4 @@
-#include "RayTracer/PointLight.hpp"
+#include "RayTracer/lights/PointLight.hpp"
 
 #include "RayTracer/Ray.hpp"
 #include "RayTracer/Scene.hpp"

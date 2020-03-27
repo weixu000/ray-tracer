@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/Geometry.hpp"
+#include "RayTracer/geometries/Geometry.hpp"
 
 // Handles local-world transform
 class LocalGeometry : public Geometry {

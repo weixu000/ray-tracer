@@ -8,7 +8,7 @@
 #include <RayTracer/Material.hpp>
 #include <RayTracer/Sampler.hpp>
 #include <RayTracer/Scene.hpp>
-#include <RayTracer/Sphere.hpp>
+#include <RayTracer/geometries/Sphere.hpp>
 
 using namespace std;
 

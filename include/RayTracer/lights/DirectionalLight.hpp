@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-#include "RayTracer/Light.hpp"
+#include "RayTracer/lights/Light.hpp"
 
 class DirectionalLight : public Light {
 public:

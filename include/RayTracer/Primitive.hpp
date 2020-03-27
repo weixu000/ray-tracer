@@ -3,8 +3,8 @@
 
 #include <glm/glm.hpp>
 
-#include <RayTracer/Geometry.hpp>
-#include <RayTracer/Material.hpp>
+#include "RayTracer/Material.hpp"
+#include "RayTracer/geometries/Geometry.hpp"
 
 struct Primitive {
   explicit Primitive(std::unique_ptr<Geometry> geo, const Material &mat);

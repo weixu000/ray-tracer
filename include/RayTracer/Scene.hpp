@@ -7,9 +7,9 @@
 #include <glm/glm.hpp>
 
 #include "RayTracer/Camera.hpp"
-#include "RayTracer/Light.hpp"
+#include "RayTracer/Primitive.hpp"
 #include "RayTracer/Ray.hpp"
-#include <RayTracer/Primitive.hpp>
+#include "RayTracer/lights/Light.hpp"
 
 class Scene {
 public:

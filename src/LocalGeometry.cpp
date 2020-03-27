@@ -1,4 +1,4 @@
-#include "RayTracer/LocalGeometry.hpp"
+#include "RayTracer/geometries/LocalGeometry.hpp"
 
 LocalGeometry::LocalGeometry(const glm::mat4 &transform)
     : world_(transform), local_(inverse(transform)),

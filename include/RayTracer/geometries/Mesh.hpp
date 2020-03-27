@@ -4,8 +4,9 @@
 #include <glm/glm.hpp>
 
 #include "RayTracer/BVH.hpp"
-#include "RayTracer/Geometry.hpp"
-#include "RayTracer/Triangle.hpp"
+#include "RayTracer/geometries/Geometry.hpp"
+
+#include "Triangle.hpp"
 
 class Mesh : public Geometry {
 public:
