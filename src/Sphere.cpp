@@ -33,3 +33,12 @@ std::optional<RayHit> Sphere::Intersect(const Ray &ray) const {
     return std::nullopt;
   }
 }
+
+AABB Sphere::GetWorldAABB() const {
+  // https://tavianator.com/exact-bounding-boxes-for-spheres-ellipsoids/
+  const auto M3x3 = mat3(world_);
+  const auto M3x3_2 = matrixCompMult(M3x3, M3x3);
+  const auto d = sqrt(M3x3_2[0] + M3x3_2[1] + M3x3_2[2]);
+  const auto v = vec3(world_[3]);
+  return AABB{v - d, v + d};
+}

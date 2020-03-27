@@ -5,10 +5,7 @@
 
 #include "RayTracer/BVH.hpp"
 #include "RayTracer/Geometry.hpp"
-
-struct Triangle {
-  glm::vec3 v, e1, e2, normal;
-};
+#include "RayTracer/Triangle.hpp"
 
 class Mesh : public Geometry {
 public:
@@ -19,8 +16,12 @@ public:
 
   std::optional<RayHit> Intersect(const Ray &ray) const override;
 
+  AABB GetWorldAABB() const override { return aabb; }
+
 private:
   std::vector<Triangle> triangles_;
+
+  AABB aabb;
 
   BVH bvh;
 };

@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 
+#include "RayTracer/AABB.hpp"
 #include "RayTracer/Ray.hpp"
 #include "RayTracer/RayHit.hpp"
 
@@ -16,6 +17,8 @@ public:
 
   virtual std::optional<RayHit> Intersect(const Ray &ray) const = 0;
 
+  virtual AABB GetWorldAABB() const = 0;
+
 protected:
   Ray WorldToLocal(const Ray &ray) const;
 
@@ -23,7 +26,6 @@ protected:
 
   glm::vec3 NormalToWorld(const glm::vec3 &n) const;
 
-private:
   const glm::mat4 world_{}, local_{};
   const glm::mat3 normal_world_{};
 };
