@@ -9,7 +9,7 @@ using namespace glm;
 
 Sphere::Sphere(const glm::mat4 &transform, const glm::vec3 &position,
                float radius)
-    : Geometry(scale(translate(transform, position), vec3(radius))) {}
+    : LocalGeometry(scale(translate(transform, position), vec3(radius))) {}
 
 std::optional<RayHit> Sphere::Intersect(const Ray &ray) const {
   const auto local_ray = WorldToLocal(ray);

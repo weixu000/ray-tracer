@@ -16,12 +16,12 @@ public:
 
   std::optional<RayHit> Intersect(const Ray &ray) const override;
 
-  AABB GetWorldAABB() const override { return aabb; }
+  AABB GetWorldAABB() const override { return aabb_; }
 
 private:
   std::vector<Triangle> triangles_;
 
-  AABB aabb;
+  AABB aabb_;
 
-  BVH bvh;
+  BVH bvh_;
 };

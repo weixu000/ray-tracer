@@ -6,13 +6,14 @@
 
 class Triangle : public Geometry {
 public:
-  Triangle(const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2);
+  Triangle(const glm::mat4 &transform, const glm::vec3 &v0, const glm::vec3 &v1,
+           const glm::vec3 &v2);
 
   std::optional<RayHit> Intersect(const Ray &ray) const override;
 
-  AABB GetWorldAABB() const override { return aabb; }
+  AABB GetWorldAABB() const override { return aabb_; }
 
 private:
-  const glm::vec3 v0, e1, e2, normal;
-  const AABB aabb;
+  glm::vec3 v0_, e1_, e2_, n_;
+  AABB aabb_;
 };
