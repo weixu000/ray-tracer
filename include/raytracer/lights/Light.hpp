@@ -24,5 +24,5 @@ public:
   static inline glm::vec3 attenuation{1.f, 0.f, 0.f};
 
 protected:
-  const glm::vec3 color_{};
+  glm::vec3 color_{};
 };

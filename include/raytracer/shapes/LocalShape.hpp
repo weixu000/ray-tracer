@@ -13,7 +13,7 @@ protected:
   Ray WorldToLocal(const Ray &ray) const;
   glm::vec3 NormalToWorld(const glm::vec3 &n) const;
 
-  const glm::mat4 world_{};
-  const glm::mat4 local_{};
-  const glm::mat3 normal_world_{};
+  glm::mat4 world_{};
+  glm::mat4 local_{};
+  glm::mat3 normal_world_{};
 };
