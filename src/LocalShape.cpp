@@ -1,4 +1,4 @@
-#include "RayTracer/shapes/LocalShape.hpp"
+#include "raytracer/shapes/LocalShape.hpp"
 
 LocalShape::LocalShape(const glm::mat4 &transform)
     : world_(transform), local_(inverse(transform)),

@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/shapes/Shape.hpp"
+#include "raytracer/shapes/Shape.hpp"
 
 // Handles local-world transform
 class LocalShape : public Shape {

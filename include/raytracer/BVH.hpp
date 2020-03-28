@@ -5,9 +5,9 @@
 #include <optional>
 #include <vector>
 
-#include "RayTracer/AABB.hpp"
-#include "RayTracer/Ray.hpp"
-#include "RayTracer/RayHit.hpp"
+#include "raytracer/AABB.hpp"
+#include "raytracer/Ray.hpp"
+#include "raytracer/RayHit.hpp"
 
 class BVH {
 public:

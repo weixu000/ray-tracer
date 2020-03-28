@@ -4,7 +4,7 @@ IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: '<[A-Za-z0-9]+>'
     Priority: 1
-  - Regex: '[<"]RayTracer/.*[>"]'
+  - Regex: '[<"]raytracer/.*[>"]'
     Priority: 3
   - Regex: '<.*>'
     Priority: 2

@@ -1,7 +1,7 @@
-#include "RayTracer/lights/DirectionalLight.hpp"
+#include "raytracer/lights/DirectionalLight.hpp"
 
-#include "RayTracer/Ray.hpp"
-#include "RayTracer/Scene.hpp"
+#include "raytracer/Ray.hpp"
+#include "raytracer/Scene.hpp"
 
 using namespace glm;
 

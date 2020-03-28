@@ -9,15 +9,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <RayTracer/ImageWriter.hpp>
-#include <RayTracer/Material.hpp>
-#include <RayTracer/Sampler.hpp>
-#include <RayTracer/Scene.hpp>
-#include <RayTracer/lights/DirectionalLight.hpp>
-#include <RayTracer/lights/Light.hpp>
-#include <RayTracer/lights/PointLight.hpp>
-#include <RayTracer/shapes/Mesh.hpp>
-#include <RayTracer/shapes/Sphere.hpp>
+#include <raytracer/ImageWriter.hpp>
+#include <raytracer/Material.hpp>
+#include <raytracer/Sampler.hpp>
+#include <raytracer/Scene.hpp>
+#include <raytracer/lights/DirectionalLight.hpp>
+#include <raytracer/lights/Light.hpp>
+#include <raytracer/lights/PointLight.hpp>
+#include <raytracer/shapes/Mesh.hpp>
+#include <raytracer/shapes/Sphere.hpp>
 
 using namespace std;
 

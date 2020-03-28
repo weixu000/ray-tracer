@@ -3,8 +3,8 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/BVH.hpp"
-#include "RayTracer/shapes/Shape.hpp"
+#include "raytracer/BVH.hpp"
+#include "raytracer/shapes/Shape.hpp"
 
 #include "Triangle.hpp"
 

@@ -1,4 +1,4 @@
-#include "RayTracer/Sampler.hpp"
+#include "raytracer/Sampler.hpp"
 
 #include <vector>
 

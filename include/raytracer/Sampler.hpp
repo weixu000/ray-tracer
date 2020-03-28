@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/Scene.hpp"
+#include "raytracer/Scene.hpp"
 
 class Sampler {
 public:

@@ -1,4 +1,4 @@
-#include "RayTracer/Primitive.hpp"
+#include "raytracer/Primitive.hpp"
 
 Primitive::Primitive(std::unique_ptr<Shape> geo, const Material &mat)
     : shape(std::move(geo)), material(mat) {}

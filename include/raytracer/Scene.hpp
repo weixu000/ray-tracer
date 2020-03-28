@@ -6,10 +6,10 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/Camera.hpp"
-#include "RayTracer/Primitive.hpp"
-#include "RayTracer/Ray.hpp"
-#include "RayTracer/lights/Light.hpp"
+#include "raytracer/Camera.hpp"
+#include "raytracer/Primitive.hpp"
+#include "raytracer/Ray.hpp"
+#include "raytracer/lights/Light.hpp"
 
 class Scene {
 public:

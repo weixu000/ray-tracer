@@ -1,4 +1,4 @@
-#include "RayTracer/ImageWriter.hpp"
+#include "raytracer/ImageWriter.hpp"
 
 #include <stb_image_write.h>
 

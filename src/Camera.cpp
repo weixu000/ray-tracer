@@ -1,4 +1,4 @@
-#include "RayTracer/Camera.hpp"
+#include "raytracer/Camera.hpp"
 
 static glm::mat3 ComputeViewMatrix(const glm::vec3 &look_from,
                                    const glm::vec3 &look_at,

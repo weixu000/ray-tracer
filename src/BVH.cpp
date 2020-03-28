@@ -1,4 +1,4 @@
-#include "RayTracer/BVH.hpp"
+#include "raytracer/BVH.hpp"
 
 #include <algorithm>
 #include <climits>

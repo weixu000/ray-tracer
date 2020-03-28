@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-#include "RayTracer/shapes/LocalShape.hpp"
+#include "raytracer/shapes/LocalShape.hpp"
 
 class Sphere : public LocalShape {
 public:

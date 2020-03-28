@@ -4,11 +4,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
-#include <RayTracer/ImageWriter.hpp>
-#include <RayTracer/Material.hpp>
-#include <RayTracer/Sampler.hpp>
-#include <RayTracer/Scene.hpp>
-#include <RayTracer/shapes/Sphere.hpp>
+#include <raytracer/ImageWriter.hpp>
+#include <raytracer/Material.hpp>
+#include <raytracer/Sampler.hpp>
+#include <raytracer/Scene.hpp>
+#include <raytracer/shapes/Sphere.hpp>
 
 using namespace std;
 

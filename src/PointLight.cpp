@@ -1,7 +1,7 @@
-#include "RayTracer/lights/PointLight.hpp"
+#include "raytracer/lights/PointLight.hpp"
 
-#include "RayTracer/Ray.hpp"
-#include "RayTracer/Scene.hpp"
+#include "raytracer/Ray.hpp"
+#include "raytracer/Scene.hpp"
 
 PointLight::PointLight(const glm::vec3 &color, const glm::vec3 &position)
     : Light(color), position_(position) {}

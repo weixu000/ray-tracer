@@ -1,9 +1,9 @@
-#include "RayTracer/Scene.hpp"
+#include "raytracer/Scene.hpp"
 
 #include <cstdint>
 
-#include "RayTracer/Material.hpp"
-#include "RayTracer/Ray.hpp"
+#include "raytracer/Material.hpp"
+#include "raytracer/Ray.hpp"
 
 std::optional<RayHit> Scene::Trace(const Ray &ray) const {
   std::optional<RayHit> nearest;

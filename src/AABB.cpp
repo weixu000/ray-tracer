@@ -1,4 +1,4 @@
-#include "RayTracer/AABB.hpp"
+#include "raytracer/AABB.hpp"
 
 #include <utility>
 
