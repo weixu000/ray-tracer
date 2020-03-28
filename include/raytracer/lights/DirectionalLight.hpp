@@ -7,8 +7,7 @@ class DirectionalLight : public Light {
 public:
   DirectionalLight(const glm::vec3 &color, const glm::vec3 &direction);
 
-  std::optional<LightCast> GenerateLightRay(const glm::vec3 &position,
-                                            const Scene &scene) const override;
+  LightRay GenerateLightRay(const glm::vec3 &p) const override;
 
 private:
   glm::vec3 direction_; // Direction towards the light source

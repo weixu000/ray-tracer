@@ -31,10 +31,12 @@ glm::vec3 Scene::Shade(const Ray &ray, int depth) const {
                N = normalize(hit->normal);
     auto color = mat.ambient + mat.emission;
     for (const auto &light : lights) {
-      if (auto light_cast = light->GenerateLightRay(incident, *this)) {
-        const auto L = -normalize(light_cast->direction);
+      const auto light_ray = light->GenerateLightRay(incident);
+      if (const auto shadow_hit = Trace(light_ray);
+          !shadow_hit || shadow_hit->t > light_ray.visible_t) {
+        const auto L = normalize(light_ray.direction);
         const auto H = normalize(V + L);
-        color += light_cast->attenuated_intensity *
+        color += light_ray.radience *
                  (mat.diffuse * max(0.f, dot(N, L)) +
                   mat.specular * pow(max(0.f, dot(N, H)), mat.shininess));
       }

@@ -3,11 +3,13 @@
 
 #include <glm/glm.hpp>
 
+#include "raytracer/Ray.hpp"
+
 class Scene;
 
-struct LightCast {
-  glm::vec3 attenuated_intensity;
-  glm::vec3 direction;
+struct LightRay : public Ray {
+  glm::vec3 radience;
+  float visible_t;
 };
 
 class Light {
@@ -18,8 +20,7 @@ public:
 
   virtual ~Light() = default;
 
-  virtual std::optional<LightCast>
-  GenerateLightRay(const glm::vec3 &position, const Scene &scene) const = 0;
+  virtual LightRay GenerateLightRay(const glm::vec3 &position) const = 0;
 
   static inline glm::vec3 attenuation{1.f, 0.f, 0.f};
 
