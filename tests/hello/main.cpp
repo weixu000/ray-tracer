@@ -5,9 +5,9 @@
 #include <glm/gtx/transform.hpp>
 
 #include <raytracer/ImageWriter.hpp>
-#include <raytracer/Integrator.hpp>
 #include <raytracer/Material.hpp>
 #include <raytracer/Scene.hpp>
+#include <raytracer/integrators/SimpleIntegrator.hpp>
 #include <raytracer/shapes/Sphere.hpp>
 
 using namespace std;
@@ -27,7 +27,7 @@ int main() {
       Sphere(glm::translate(glm::vec3(0.f)), glm::vec3(0.f, 0.f, 0.f), 1.f);
   scene.primitives.emplace_back(make_unique<Sphere>(move(s)), material);
 
-  Integrator renderer(scene, camera);
+  SimpleIntegrator renderer(scene, camera);
   auto image = renderer.Render();
   ImageWriter::WriteTo(scene.output_file, width, height, image);
 

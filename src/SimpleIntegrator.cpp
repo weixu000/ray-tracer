@@ -1,4 +1,4 @@
-#include "raytracer/Integrator.hpp"
+#include "raytracer/integrators/SimpleIntegrator.hpp"
 
 #include <vector>
 
@@ -6,10 +6,11 @@
 
 #include "raytracer/Sampler.hpp"
 
-Integrator::Integrator(const Scene &scene, const Camera &camera, int max_depth)
+SimpleIntegrator::SimpleIntegrator(const Scene &scene, const Camera &camera,
+                                   int max_depth)
     : scene_(scene), camera_(camera), max_depth_(max_depth) {}
 
-std::vector<glm::u8vec3> Integrator::Render() const {
+std::vector<glm::u8vec3> SimpleIntegrator::Render() const {
   using namespace glm;
 
   const auto w = camera_.width_;
@@ -28,7 +29,7 @@ std::vector<glm::u8vec3> Integrator::Render() const {
   return output;
 }
 
-glm::vec3 Integrator::Shade(const Ray &ray, int depth) const {
+glm::vec3 SimpleIntegrator::Shade(const Ray &ray, int depth) const {
   using namespace std;
 
   if (depth <= 0) {

@@ -10,9 +10,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <raytracer/ImageWriter.hpp>
-#include <raytracer/Integrator.hpp>
 #include <raytracer/Material.hpp>
 #include <raytracer/Scene.hpp>
+#include <raytracer/integrators/SimpleIntegrator.hpp>
 #include <raytracer/lights/DirectionalLight.hpp>
 #include <raytracer/lights/Light.hpp>
 #include <raytracer/lights/PointLight.hpp>
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
   FinishMesh();
 
   cout << "Rendering..." << endl;
-  Integrator renderer(scene, camera, max_depth);
+  SimpleIntegrator renderer(scene, camera, max_depth);
   auto image = renderer.Render();
   ImageWriter::WriteTo(scene.output_file, width, height, image);
 

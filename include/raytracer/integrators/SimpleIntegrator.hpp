@@ -7,10 +7,10 @@
 #include "raytracer/Camera.hpp"
 #include "raytracer/Scene.hpp"
 
-class Integrator {
+class SimpleIntegrator {
 public:
-  explicit Integrator(const Scene &scene, const Camera &camera,
-                      int max_depth = 5);
+  explicit SimpleIntegrator(const Scene &scene, const Camera &camera,
+                            int max_depth = 5);
 
   std::vector<glm::u8vec3> Render() const;
 
