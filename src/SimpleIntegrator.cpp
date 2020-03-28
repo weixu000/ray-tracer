@@ -8,7 +8,7 @@
 
 SimpleIntegrator::SimpleIntegrator(const Scene &scene, const Camera &camera,
                                    int max_depth)
-    : scene_(scene), camera_(camera), max_depth_(max_depth) {}
+    : Integrator(scene, camera) {}
 
 std::vector<glm::u8vec3> SimpleIntegrator::Render() const {
   using namespace glm;

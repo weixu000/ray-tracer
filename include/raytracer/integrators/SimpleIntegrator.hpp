@@ -4,20 +4,16 @@
 
 #include <glm/glm.hpp>
 
-#include "raytracer/Camera.hpp"
-#include "raytracer/Scene.hpp"
+#include "raytracer/integrators/Integrator.hpp"
 
-class SimpleIntegrator {
+class SimpleIntegrator : public Integrator {
 public:
-  explicit SimpleIntegrator(const Scene &scene, const Camera &camera,
-                            int max_depth = 5);
+  SimpleIntegrator(const Scene &scene, const Camera &camera, int max_depth = 5);
 
-  std::vector<glm::u8vec3> Render() const;
+  std::vector<glm::u8vec3> Render() const override;
 
 private:
   glm::vec3 Shade(const Ray &ray, int depth) const;
 
-  const Scene &scene_;
-  const Camera &camera_;
   int max_depth_;
 };
