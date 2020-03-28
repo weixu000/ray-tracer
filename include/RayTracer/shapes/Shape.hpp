@@ -7,11 +7,11 @@
 #include "RayTracer/Ray.hpp"
 #include "RayTracer/RayHit.hpp"
 
-class Geometry {
+class Shape {
 public:
-  Geometry() = default;
+  Shape() = default;
 
-  virtual ~Geometry() = default;
+  virtual ~Shape() = default;
 
   virtual std::optional<RayHit> Intersect(const Ray &ray) const = 0;
 

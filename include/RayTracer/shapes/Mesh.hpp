@@ -4,11 +4,11 @@
 #include <glm/glm.hpp>
 
 #include "RayTracer/BVH.hpp"
-#include "RayTracer/geometries/Geometry.hpp"
+#include "RayTracer/shapes/Shape.hpp"
 
 #include "Triangle.hpp"
 
-class Mesh : public Geometry {
+class Mesh : public Shape {
 public:
   Mesh() = default;
 

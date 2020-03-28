@@ -13,11 +13,11 @@
 #include <RayTracer/Material.hpp>
 #include <RayTracer/Sampler.hpp>
 #include <RayTracer/Scene.hpp>
-#include <RayTracer/geometries/Mesh.hpp>
-#include <RayTracer/geometries/Sphere.hpp>
 #include <RayTracer/lights/DirectionalLight.hpp>
 #include <RayTracer/lights/Light.hpp>
 #include <RayTracer/lights/PointLight.hpp>
+#include <RayTracer/shapes/Mesh.hpp>
+#include <RayTracer/shapes/Sphere.hpp>
 
 using namespace std;
 

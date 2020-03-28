@@ -1,4 +1,4 @@
-#include "RayTracer/geometries/Triangle.hpp"
+#include "RayTracer/shapes/Triangle.hpp"
 
 using namespace glm;
 

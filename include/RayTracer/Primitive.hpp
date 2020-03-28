@@ -4,12 +4,12 @@
 #include <glm/glm.hpp>
 
 #include "RayTracer/Material.hpp"
-#include "RayTracer/geometries/Geometry.hpp"
+#include "RayTracer/shapes/Shape.hpp"
 
 struct Primitive {
-  explicit Primitive(std::unique_ptr<Geometry> geo, const Material &mat);
+  explicit Primitive(std::unique_ptr<Shape> geo, const Material &mat);
 
-  std::unique_ptr<Geometry> geometry;
+  std::unique_ptr<Shape> shape;
   Material material;
 
   std::optional<RayHit> Intersect(const Ray &ray) const;

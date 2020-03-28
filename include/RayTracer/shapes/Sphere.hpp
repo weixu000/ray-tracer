@@ -1,9 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
 
-#include "RayTracer/geometries/LocalGeometry.hpp"
+#include "RayTracer/shapes/LocalShape.hpp"
 
-class Sphere : public LocalGeometry {
+class Sphere : public LocalShape {
 public:
   Sphere() = default;
 

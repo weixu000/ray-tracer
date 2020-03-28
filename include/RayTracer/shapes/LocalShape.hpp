@@ -2,12 +2,12 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/geometries/Geometry.hpp"
+#include "RayTracer/shapes/Shape.hpp"
 
 // Handles local-world transform
-class LocalGeometry : public Geometry {
+class LocalShape : public Shape {
 public:
-  explicit LocalGeometry(const glm::mat4 &transform);
+  explicit LocalShape(const glm::mat4 &transform);
 
 protected:
   Ray WorldToLocal(const Ray &ray) const;

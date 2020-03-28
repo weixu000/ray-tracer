@@ -2,9 +2,9 @@
 
 #include <glm/glm.hpp>
 
-#include "RayTracer/geometries/Geometry.hpp"
+#include "RayTracer/shapes/Shape.hpp"
 
-class Triangle : public Geometry {
+class Triangle : public Shape {
 public:
   Triangle(const glm::mat4 &transform, const glm::vec3 &v0, const glm::vec3 &v1,
            const glm::vec3 &v2);
