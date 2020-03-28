@@ -8,7 +8,7 @@
 std::optional<RayHit> Scene::Trace(const Ray &ray) const {
   std::optional<RayHit> nearest;
   for (const auto &geo : primitives) {
-    if (auto hit = geo.Intersect(ray)) {
+    if (auto hit = geo.Hit(ray)) {
       if (!nearest || hit->t + FLT_EPSILON < nearest->t) {
         nearest = hit;
       }

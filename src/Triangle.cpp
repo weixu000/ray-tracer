@@ -15,7 +15,7 @@ Triangle::Triangle(const glm::mat4 &transform, const glm::vec3 &v0,
 }
 
 // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-std::optional<RayHit> Triangle::Intersect(const Ray &ray) const {
+std::optional<RayHit> Triangle::Hit(const Ray &ray) const {
   const auto d = ray.direction, o = ray.origin;
   const auto h = cross(d, e2_);
   const auto a = dot(e1_, h);

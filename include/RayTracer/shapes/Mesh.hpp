@@ -15,7 +15,7 @@ public:
   Mesh(const glm::mat4 &transform, const std::vector<glm::vec3> &verts,
        const std::vector<glm::ivec3> &tris);
 
-  std::optional<RayHit> Intersect(const Ray &ray) const override;
+  std::optional<RayHit> Hit(const Ray &ray) const override;
 
   AABB GetWorldAABB() const override { return aabb_; }
 

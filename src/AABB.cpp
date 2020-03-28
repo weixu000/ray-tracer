@@ -4,7 +4,7 @@
 
 using namespace std;
 
-bool AABB::Intersect(const Ray &ray) const {
+bool AABB::Hit(const Ray &ray) const {
   auto tmin = (min.x - ray.origin.x) / ray.direction.x;
   auto tmax = (max.x - ray.origin.x) / ray.direction.x;
   if (tmin > tmax)

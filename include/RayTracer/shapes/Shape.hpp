@@ -13,7 +13,7 @@ public:
 
   virtual ~Shape() = default;
 
-  virtual std::optional<RayHit> Intersect(const Ray &ray) const = 0;
+  virtual std::optional<RayHit> Hit(const Ray &ray) const = 0;
 
   virtual AABB GetWorldAABB() const = 0;
 };

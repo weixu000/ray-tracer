@@ -18,9 +18,9 @@ Mesh::Mesh(const glm::mat4 &transform, const std::vector<glm::vec3> &verts,
   bvh_ = std::move(BVH(boxes));
 }
 
-std::optional<RayHit> Mesh::Intersect(const Ray &ray) const {
+std::optional<RayHit> Mesh::Hit(const Ray &ray) const {
   const auto hit = bvh_.Traverse(
-      ray, [&](const size_t f) { return triangles_[f].Intersect(ray); });
+      ray, [&](const size_t f) { return triangles_[f].Hit(ray); });
   if (hit) {
     return hit->first;
   } else {

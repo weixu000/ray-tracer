@@ -12,5 +12,5 @@ struct Primitive {
   std::unique_ptr<Shape> shape;
   Material material;
 
-  std::optional<RayHit> Intersect(const Ray &ray) const;
+  std::optional<RayHit> Hit(const Ray &ray) const;
 };

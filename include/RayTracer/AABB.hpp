@@ -7,7 +7,7 @@
 #include "RayTracer/Ray.hpp"
 
 struct AABB {
-  bool Intersect(const Ray &ray) const;
+  bool Hit(const Ray &ray) const;
 
   void Union(const AABB &other);
 

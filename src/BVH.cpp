@@ -30,7 +30,7 @@ BVH::Traverse(const Ray &r, const IntersectIndex &test) const {
   while (!stack.empty()) {
     const auto node = stack.top();
     stack.pop();
-    if (!node || !node->box.Intersect(r)) {
+    if (!node || !node->box.Hit(r)) {
       continue;
     }
 
