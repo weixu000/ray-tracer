@@ -1,19 +1,16 @@
 #include "raytracer/Camera.hpp"
 
-static glm::mat3 ComputeViewMatrix(const glm::vec3 &look_from,
-                                   const glm::vec3 &look_at,
-                                   const glm::vec3 &up) {
+Camera::Camera(const glm::vec3 &look_from, const glm::vec3 &look_at,
+               const glm::vec3 &up, float fov, int w, int h)
+    : look_from_(look_from), width_(w), height_(h) {
   using namespace glm;
   const auto f = normalize(look_at - look_from);
   const auto s = normalize(cross(f, up));
   const auto u(cross(s, f));
-  return mat3(s, u, -f);
-}
+  view_ = mat3(s, u, -f);
 
-Camera::Camera(const glm::vec3 &look_from, const glm::vec3 &look_at,
-               const glm::vec3 &up, float fov)
-    : tan_fov_2_(glm::tan(glm::radians(fov / 2))),
-      view_(ComputeViewMatrix(look_from, look_at, up)), look_from_(look_from) {}
+  tan_fov_2_ = tan(radians(fov / 2));
+}
 
 Ray Camera::GenerateEyeRay(const glm::vec2 &pixel) const {
   return {look_from_,

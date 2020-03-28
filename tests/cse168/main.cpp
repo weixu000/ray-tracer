@@ -10,8 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <raytracer/ImageWriter.hpp>
+#include <raytracer/Integrator.hpp>
 #include <raytracer/Material.hpp>
-#include <raytracer/Sampler.hpp>
 #include <raytracer/Scene.hpp>
 #include <raytracer/lights/DirectionalLight.hpp>
 #include <raytracer/lights/Light.hpp>
@@ -25,6 +25,9 @@ static Scene scene;
 static vector<glm::mat4> transform_stack;
 static std::vector<glm::ivec3> triangle_list;
 static Material current_material;
+static int width, height;
+static int max_depth = 5;
+static Camera camera;
 
 static glm::mat4 StackMatrices() {
   glm::mat4 m(1.0f);
@@ -73,16 +76,16 @@ int main(int argc, char *argv[]) {
     string command;
     ss >> command;
     if (command == "size") {
-      ss >> scene.width >> scene.height;
+      ss >> width >> height;
     } else if (command == "maxdepth") {
-      ss >> scene.max_depth;
+      ss >> max_depth;
     } else if (command == "output") {
       ss >> scene.output_file;
     } else if (command == "camera") {
       glm::vec3 look_from, look_at, up;
       float fov;
       ss >> look_from >> look_at >> up >> fov;
-      scene.camera = Camera(look_from, look_at, up, fov);
+      camera = Camera(look_from, look_at, up, fov, width, height);
     } else if (command == "sphere") {
       glm::vec3 position;
       float rad;
@@ -162,9 +165,9 @@ int main(int argc, char *argv[]) {
   FinishMesh();
 
   cout << "Rendering..." << endl;
-  Sampler renderer;
-  auto image = renderer.Render(scene);
-  ImageWriter::WriteTo(scene.output_file, scene.width, scene.height, image);
+  Integrator renderer(scene, camera, max_depth);
+  auto image = renderer.Render();
+  ImageWriter::WriteTo(scene.output_file, width, height, image);
 
   return EXIT_SUCCESS;
 }

@@ -1,12 +1,12 @@
 #pragma once
-
-#include <vector>
-
 #include <glm/glm.hpp>
-
-#include "raytracer/Scene.hpp"
 
 class Sampler {
 public:
-  std::vector<glm::u8vec3> Render(const Scene &scene);
+  Sampler(int w, int h);
+
+  glm::vec2 Sample(int i, int j);
+
+private:
+  int width_, height_;
 };
