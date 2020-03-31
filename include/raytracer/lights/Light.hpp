@@ -14,8 +14,6 @@ struct LightRay : public Ray {
 
 class Light {
 public:
-  Light() = default;
-
   explicit Light(const glm::vec3 &color);
 
   virtual ~Light() = default;
@@ -24,6 +22,5 @@ public:
 
   static inline glm::vec3 attenuation{1.f, 0.f, 0.f};
 
-protected:
-  glm::vec3 color_{};
+  const glm::vec3 color_;
 };

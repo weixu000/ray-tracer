@@ -9,7 +9,7 @@
 
 class Integrator {
 public:
-  explicit Integrator(const Scene &scene, const Camera &camera);
+  Integrator(const Scene &scene, const Camera &camera);
 
   virtual std::vector<glm::u8vec3> Render() const = 0;
 

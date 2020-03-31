@@ -12,10 +12,12 @@
 #include <raytracer/ImageWriter.hpp>
 #include <raytracer/Material.hpp>
 #include <raytracer/Scene.hpp>
+#include <raytracer/integrators/AnalyticDirectIntegrator.hpp>
 #include <raytracer/integrators/SimpleIntegrator.hpp>
 #include <raytracer/lights/DirectionalLight.hpp>
 #include <raytracer/lights/Light.hpp>
 #include <raytracer/lights/PointLight.hpp>
+#include <raytracer/lights/QuadLight.hpp>
 #include <raytracer/shapes/Mesh.hpp>
 #include <raytracer/shapes/Sphere.hpp>
 
@@ -28,6 +30,8 @@ static Material current_material;
 static int width, height;
 static int max_depth = 5;
 static Camera camera;
+static std::unique_ptr<Integrator> integrator =
+    std::make_unique<SimpleIntegrator>(scene, camera);
 
 static glm::mat4 StackMatrices() {
   glm::mat4 m(1.0f);
@@ -75,10 +79,25 @@ int main(int argc, char *argv[]) {
     istringstream ss(line);
     string command;
     ss >> command;
-    if (command == "size") {
+    if (command == "integrator") {
+      string name;
+      ss >> name;
+      if (name == "raytracer") {
+        auto simple_integrator = SimpleIntegrator(scene, camera);
+        simple_integrator.max_depth_ = max_depth;
+        integrator =
+            std::make_unique<SimpleIntegrator>(move(simple_integrator));
+      } else if (name == "analyticdirect") {
+        integrator = std::make_unique<AnalyticDirectIntegrator>(scene, camera);
+      }
+    } else if (command == "size") {
       ss >> width >> height;
     } else if (command == "maxdepth") {
       ss >> max_depth;
+      if (const auto simple_integrator =
+              dynamic_cast<SimpleIntegrator *>(integrator.get())) {
+        simple_integrator->max_depth_ = max_depth;
+      }
     } else if (command == "output") {
       ss >> scene.output_file;
     } else if (command == "camera") {
@@ -140,6 +159,10 @@ int main(int argc, char *argv[]) {
       glm::vec3 position, color;
       ss >> position >> color;
       scene.lights.push_back(make_unique<PointLight>(color, position));
+    } else if (command == "quadLight") {
+      glm::vec3 v0, e1, e2, intensity;
+      ss >> v0 >> e1 >> e2 >> intensity;
+      scene.lights.push_back(make_unique<QuadLight>(intensity, v0, e1, e2));
     } else if (command == "attenuation") {
       ss >> Light::attenuation;
     } else if (command == "ambient") {
@@ -165,8 +188,7 @@ int main(int argc, char *argv[]) {
   FinishMesh();
 
   cout << "Rendering..." << endl;
-  SimpleIntegrator renderer(scene, camera, max_depth);
-  auto image = renderer.Render();
+  auto image = integrator->Render();
   ImageWriter::WriteTo(scene.output_file, width, height, image);
 
   return EXIT_SUCCESS;

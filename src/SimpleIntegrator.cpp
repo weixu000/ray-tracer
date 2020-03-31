@@ -6,10 +6,6 @@
 
 #include "raytracer/Sampler.hpp"
 
-SimpleIntegrator::SimpleIntegrator(const Scene &scene, const Camera &camera,
-                                   int max_depth)
-    : Integrator(scene, camera) {}
-
 std::vector<glm::u8vec3> SimpleIntegrator::Render() const {
   using namespace glm;
 
@@ -30,7 +26,7 @@ std::vector<glm::u8vec3> SimpleIntegrator::Render() const {
 }
 
 glm::vec3 SimpleIntegrator::Shade(const Ray &ray, int depth) const {
-  using namespace std;
+  using namespace glm;
 
   if (depth <= 0) {
     return glm::vec3(0.f);
