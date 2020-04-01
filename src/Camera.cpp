@@ -13,6 +13,9 @@ Camera::Camera(const glm::vec3 &look_from, const glm::vec3 &look_at,
 }
 
 Ray Camera::GenerateEyeRay(const glm::vec2 &pixel) const {
-  return {look_from_,
-          view_ * glm::vec3(pixel.x * tan_fov_2_, pixel.y * tan_fov_2_, -1.f)};
+  // transform pixel sapce to camera space
+  const auto x = (pixel.y - width_ / 2.f) / (height_ / 2.f);
+  const auto y = (-pixel.x + height_ / 2.f) / (height_ / 2.f);
+
+  return {look_from_, view_ * glm::vec3(x * tan_fov_2_, y * tan_fov_2_, -1.f)};
 }

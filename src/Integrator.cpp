@@ -1,6 +1,6 @@
 #include "raytracer/integrators/Integrator.hpp"
 
-#include "raytracer/Sampler.hpp"
+#include "raytracer/samplers/CenterSampler.hpp"
 
 Integrator::Integrator(const Scene &scene, const Camera &camera)
     : scene_(scene), camera_(camera) {}
@@ -11,12 +11,13 @@ std::vector<glm::u8vec3> Integrator::Render() const {
   const auto w = camera_.width_;
   const auto h = camera_.height_;
 
-  Sampler sampler(w, h);
+  CenterSampler sampler;
 
   std::vector<u8vec3> output(w * h);
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < w; ++j) {
-      const auto ray = camera_.GenerateEyeRay(sampler.Sample(i, j));
+      const auto pixel = glm::vec2(i, j) + sampler.Sample();
+      const auto ray = camera_.GenerateEyeRay(pixel);
       const auto color = Shade(ray);
       output[i * w + j] = u8vec3(min(color, vec3(1.f)) * 255.0f);
     }
