@@ -7,5 +7,6 @@ class NormalIntegrator : public Integrator {
 public:
   using Integrator::Integrator;
 
-  std::vector<glm::u8vec3> Render() const override;
+private:
+  glm::vec3 Shade(const Ray &ray) const override;
 };

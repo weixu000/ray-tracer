@@ -1,29 +1,6 @@
 #include "raytracer/integrators/SimpleIntegrator.hpp"
 
-#include <vector>
-
 #include <glm/glm.hpp>
-
-#include "raytracer/Sampler.hpp"
-
-std::vector<glm::u8vec3> SimpleIntegrator::Render() const {
-  using namespace glm;
-
-  const auto w = camera_.width_;
-  const auto h = camera_.height_;
-
-  Sampler sampler(w, h);
-
-  std::vector<u8vec3> output(w * h);
-  for (int i = 0; i < h; ++i) {
-    for (int j = 0; j < w; ++j) {
-      const auto ray = camera_.GenerateEyeRay(sampler.Sample(i, j));
-      const auto color = Shade(ray, max_depth_);
-      output[i * w + j] = u8vec3(min(color, vec3(1.f)) * 255.0f);
-    }
-  }
-  return output;
-}
 
 glm::vec3 SimpleIntegrator::Shade(const Ray &ray, int depth) const {
   using namespace glm;
