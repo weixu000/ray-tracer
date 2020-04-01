@@ -9,8 +9,7 @@ glm::vec3 SimpleIntegrator::Shade(const Ray &ray, int depth) const {
     return glm::vec3(0.f);
   }
 
-  auto hit = scene_.Trace(ray);
-  if (hit) {
+  if (const auto hit = scene_.Trace(ray)) {
     const auto &mat = *hit->material;
     const auto incident = ray(hit->t), V = -normalize(ray.direction),
                N = normalize(hit->normal);

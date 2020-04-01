@@ -15,8 +15,7 @@ glm::vec3 AnalyticDirectIntegrator::Shade(const Ray &ray) const {
     }
   }
 
-  auto hit = scene_.Trace(ray);
-  if (hit) {
+  if (const auto hit = scene_.Trace(ray)) {
     const auto &mat = *hit->material;
     const auto incident = ray(hit->t), N = normalize(hit->normal);
     auto color = glm::vec3(0.f);
