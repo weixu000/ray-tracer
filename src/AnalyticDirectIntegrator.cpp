@@ -10,7 +10,7 @@ glm::vec3 AnalyticDirectIntegrator::Shade(const Ray &ray) const {
   for (const auto &light : scene_.lights) {
     if (const auto quad = dynamic_cast<QuadLight *>(light.get())) {
       if (const auto hit = quad->Intersect(ray)) {
-        return quad->color_;
+        return quad->intensity;
       }
     }
   }
@@ -22,7 +22,7 @@ glm::vec3 AnalyticDirectIntegrator::Shade(const Ray &ray) const {
     auto color = glm::vec3(0.f);
     for (const auto &light : scene_.lights) {
       if (const auto quad = dynamic_cast<QuadLight *>(light.get())) {
-        color += mat.diffuse / pi<float>() * quad->color_ *
+        color += mat.diffuse / pi<float>() * quad->intensity *
                  max(0.f, dot(quad->GetIrradianceVector(incident), N));
       }
     }

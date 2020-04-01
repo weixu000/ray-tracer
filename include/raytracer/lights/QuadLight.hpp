@@ -8,8 +8,8 @@ public:
   QuadLight(const glm::vec3 &intensity, const glm::vec3 &v0,
             const glm::vec3 &e1, const glm::vec3 &e2);
 
-  LightRay GenerateLightRay(const glm::vec3 &incident, float u,
-                            float v) const override;
+  LightSample GenerateLightRay(const glm::vec3 &incident, float u,
+                               float v) const override;
 
   std::optional<float> Intersect(const Ray &ray) const;
 
