@@ -6,11 +6,12 @@
 PointLight::PointLight(const glm::vec3 &color, const glm::vec3 &position)
     : Light(color), position_(position) {}
 
-LightRay PointLight::GenerateLightRay(const glm::vec3 &p) const {
+LightRay PointLight::GenerateLightRay(const glm::vec3 &incident, float u,
+                                      float v) const {
   using namespace glm;
-  const auto d = position_ - p;
+  const auto d = position_ - incident;
   const auto d_l = length(d);
   const auto d_p = glm::vec3(1.f, d_l, d_l * d_l);
   const auto attenuation = dot(Light::attenuation, d_p);
-  return LightRay{p + d * SHADOW_EPSILON, d, color_ / attenuation, 1.f};
+  return LightRay{incident + d * SHADOW_EPSILON, d, color_ / attenuation, 1.f};
 }

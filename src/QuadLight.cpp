@@ -1,5 +1,7 @@
 #include "raytracer/lights/QuadLight.hpp"
 
+using namespace glm;
+
 QuadLight::QuadLight(const glm::vec3 &intensity, const glm::vec3 &v0,
                      const glm::vec3 &e1, const glm::vec3 &e2)
     : Light(intensity), v0_(v0), e1_(e1), e2_(e2) {
@@ -7,15 +9,19 @@ QuadLight::QuadLight(const glm::vec3 &intensity, const glm::vec3 &v0,
   v_[1] = v0 + e1;
   v_[2] = v_[1] + e2;
   v_[3] = v0 + e2;
+  normal_ = cross(e1, e2);
+  area_ = length(normal_);
 }
 
-LightRay QuadLight::GenerateLightRay(const glm::vec3 &position) const {
-  // Not implemented
-  std::exit(EXIT_FAILURE);
+LightRay QuadLight::GenerateLightRay(const glm::vec3 &incident, float u,
+                                     float v) const {
+  const auto p = v0_ + u * e1_ + v * e2_;
+  const auto d = p - incident;
+  return LightRay{
+      incident + d * SHADOW_EPSILON, d, color_, 1.f, p, normal_, area_};
 }
 
 std::optional<float> QuadLight::Intersect(const Ray &ray) const {
-  using namespace glm;
   const auto o = ray.origin, d = ray.direction;
   const auto res = inverse(mat3(e1_, e2_, -d)) * (o - v0_);
   const auto u = res[0], v = res[1], t = res[2];
@@ -28,7 +34,6 @@ std::optional<float> QuadLight::Intersect(const Ray &ray) const {
 }
 
 glm::vec3 QuadLight::GetIrradianceVector(const glm::vec3 &r) const {
-  using namespace glm;
   glm::vec3 e[4];
   for (int i = 0; i < 4; ++i) {
     e[i] = normalize(v_[i] - r);

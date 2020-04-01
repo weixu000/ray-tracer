@@ -9,6 +9,8 @@ DirectionalLight::DirectionalLight(const glm::vec3 &color,
                                    const glm::vec3 &direction)
     : Light(color), direction_(normalize(direction)) {}
 
-LightRay DirectionalLight::GenerateLightRay(const glm::vec3 &p) const {
-  return LightRay{p + direction_ * SHADOW_EPSILON, direction_, color_, FLT_MAX};
+LightRay DirectionalLight::GenerateLightRay(const glm::vec3 &incident, float u,
+                                            float v) const {
+  return LightRay{incident + direction_ * SHADOW_EPSILON, direction_, color_,
+                  FLT_MAX};
 }
