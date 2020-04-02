@@ -27,17 +27,22 @@ glm::vec3 DirectIntegrator::Shade(const Ray &ray) const {
       for (int i_sample = 0; i_sample < sampler->count; ++i_sample) {
         const auto light_sample = light->GenerateLightRay(x, sampler->Sample());
         const auto shadow_ray = light_sample.GetShadowRay();
+
+        const auto w_i = normalize(shadow_ray.direction);
+        const auto n_l = normalize(light_sample.normal);
+        const auto w_i_n = dot(w_i, n), w_i_n_l = dot(w_i, n_l);
+        if (w_i_n < 0 || w_i_n_l < 0) {
+          continue;
+        }
         if (const auto shadow_hit = scene_.Trace(shadow_ray);
             !shadow_hit || shadow_hit->t > .99f) {
-          const auto w_i = normalize(shadow_ray.direction);
-          const auto n_l = normalize(light_sample.normal);
-          const auto R_2 = length2(light_sample.incident - light_sample.light);
-          const auto G = dot(w_i, n) * dot(w_i, n_l) / R_2;
+          const auto R_2 = length2(shadow_ray.direction);
+          const auto G = w_i_n * w_i_n_l / R_2;
 
           const auto r = reflect(-w_o, n);
           const auto f =
               (mat.diffuse + mat.specular * (mat.shininess + 2) / 2.f *
-                                 pow(dot(r, w_i), mat.shininess)) *
+                                 pow(max(0.f, dot(r, w_i)), mat.shininess)) *
               one_over_pi<float>();
 
           radience += light_sample.radience * light_sample.area * f * G;

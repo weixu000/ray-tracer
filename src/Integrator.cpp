@@ -20,6 +20,7 @@ std::vector<glm::u8vec3> Integrator::Render() const {
       const auto pixel = glm::vec2(i, j) + sampler.Sample();
       const auto ray = camera_.GenerateEyeRay(pixel);
       const auto color = Shade(ray);
+      assert(glm::all(glm::greaterThanEqual(color, glm::vec3(0.f))));
       output[i * w + j] = u8vec3(min(color, vec3(1.f)) * 255.0f);
     }
   }
