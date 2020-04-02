@@ -7,8 +7,12 @@ class DirectionalLight : public Light {
 public:
   DirectionalLight(const glm::vec3 &color, const glm::vec3 &direction);
 
-  LightSample GenerateLightRay(const glm::vec3 &incident, float u,
-                               float v) const override;
+  LightSample GenerateLightRay(const glm::vec3 &incident,
+                               const glm::vec2 &uv) const override;
+
+  std::optional<float> Intersect(const Ray &ray) const override {
+    return std::nullopt;
+  }
 
 private:
   glm::vec3 direction_; // Direction towards the light source

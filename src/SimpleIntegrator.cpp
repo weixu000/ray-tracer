@@ -15,7 +15,7 @@ glm::vec3 SimpleIntegrator::Shade(const Ray &ray, int depth) const {
                N = normalize(hit->normal);
     auto color = mat.ambient + mat.emission;
     for (const auto &light : scene_.lights) {
-      const auto light_sample = light->GenerateLightRay(incident, 0.f, 0.f);
+      const auto light_sample = light->GenerateLightRay(incident, glm::vec2());
       const auto shadow_ray = light_sample.GetShadowRay();
       if (const auto shadow_hit = scene_.Trace(shadow_ray);
           !shadow_hit || shadow_hit->t > 1.f) {

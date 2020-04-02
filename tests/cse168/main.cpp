@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
       ss >> v0 >> e1 >> e2 >> intensity;
       scene.lights.push_back(make_unique<QuadLight>(intensity, v0, e1, e2));
     } else if (command == "attenuation") {
-      ss >> Light::attenuation;
+      ss >> PointLight::attenuation;
     } else if (command == "ambient") {
       FinishMesh();
       ss >> current_material.ambient;

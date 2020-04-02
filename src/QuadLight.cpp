@@ -13,9 +13,9 @@ QuadLight::QuadLight(const glm::vec3 &intensity, const glm::vec3 &v0,
   area_ = length(normal_);
 }
 
-LightSample QuadLight::GenerateLightRay(const glm::vec3 &incident, float u,
-                                        float v) const {
-  const auto p = v0_ + u * e1_ + v * e2_;
+LightSample QuadLight::GenerateLightRay(const glm::vec3 &incident,
+                                        const glm::vec2 &uv) const {
+  const auto p = v0_ + uv.x * e1_ + uv.y * e2_;
   const auto d = p - incident;
   return LightSample{p, incident, intensity, normal_, area_};
 }

@@ -14,10 +14,10 @@ public:
 
   virtual ~Light() = default;
 
-  virtual LightSample GenerateLightRay(const glm::vec3 &incident, float u,
-                                       float v) const = 0;
+  virtual LightSample GenerateLightRay(const glm::vec3 &incident,
+                                       const glm::vec2 &uv) const = 0;
 
-  static inline glm::vec3 attenuation{1.f, 0.f, 0.f};
+  virtual std::optional<float> Intersect(const Ray &ray) const = 0;
 
   const glm::vec3 intensity;
 };
