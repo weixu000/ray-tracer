@@ -1,7 +1,11 @@
 #pragma once
-#include <glm/glm.hpp>
+#include "raytracer/samplers/Sampler.hpp"
 
-class CenterSampler {
+class CenterSampler : public Sampler {
 public:
-  glm::vec2 Sample();
+  CenterSampler() : Sampler(1) {}
+
+  void Reset() override {}
+
+  glm::vec2 Sample() override { return {.5f, .5f}; }
 };
