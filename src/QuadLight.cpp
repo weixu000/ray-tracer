@@ -13,14 +13,14 @@ QuadLight::QuadLight(const glm::vec3 &intensity, const glm::vec3 &v0,
   area_ = length(normal_);
 }
 
-LightSample QuadLight::GenerateLightRay(const glm::vec3 &incident,
-                                        const glm::vec2 &uv) const {
+LightSample QuadLight::GenerateSample(const glm::vec3 &incident,
+                                      const glm::vec2 &uv) const {
   const auto p = v0_ + uv.x * e1_ + uv.y * e2_;
   const auto d = p - incident;
   return LightSample{p, incident, intensity, normal_, area_};
 }
 
-std::optional<float> QuadLight::Intersect(const Ray &ray) const {
+std::optional<float> QuadLight::Hit(const Ray &ray) const {
   const auto o = ray.origin, d = ray.direction;
   const auto res = inverse(mat3(e1_, e2_, -d)) * (o - v0_);
   const auto u = res[0], v = res[1], t = res[2];

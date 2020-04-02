@@ -9,7 +9,7 @@ glm::vec3 AnalyticDirectIntegrator::Shade(const Ray &ray) const {
 
   for (const auto &light : scene_.lights) {
     if (const auto quad = dynamic_cast<QuadLight *>(light.get())) {
-      if (const auto hit = quad->Intersect(ray)) {
+      if (const auto hit = quad->Hit(ray)) {
         return quad->intensity;
       }
     }

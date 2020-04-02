@@ -6,8 +6,8 @@
 PointLight::PointLight(const glm::vec3 &color, const glm::vec3 &position)
     : Light(color), position_(position) {}
 
-LightSample PointLight::GenerateLightRay(const glm::vec3 &incident,
-                                         const glm::vec2 &uv) const {
+LightSample PointLight::GenerateSample(const glm::vec3 &incident,
+                                       const glm::vec2 &uv) const {
   using namespace glm;
   const auto d = position_ - incident;
   const auto d_l = length(d);

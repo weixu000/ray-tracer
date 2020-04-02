@@ -6,7 +6,7 @@
 struct LightSample {
   glm::vec3 light, incident;
   glm::vec3 radience, normal;
-  float area;
+  float jacobian;
 
   Ray GetShadowRay() const;
 };
