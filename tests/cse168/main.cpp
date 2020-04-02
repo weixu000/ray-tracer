@@ -13,11 +13,14 @@
 #include <raytracer/Material.hpp>
 #include <raytracer/Scene.hpp>
 #include <raytracer/integrators/AnalyticDirectIntegrator.hpp>
+#include <raytracer/integrators/DirectIntegrator.hpp>
 #include <raytracer/integrators/SimpleIntegrator.hpp>
 #include <raytracer/lights/DirectionalLight.hpp>
 #include <raytracer/lights/Light.hpp>
 #include <raytracer/lights/PointLight.hpp>
 #include <raytracer/lights/QuadLight.hpp>
+#include <raytracer/samplers/RandomSampler.hpp>
+#include <raytracer/samplers/StratifiedSampler.hpp>
 #include <raytracer/shapes/Mesh.hpp>
 #include <raytracer/shapes/Sphere.hpp>
 
@@ -32,6 +35,8 @@ static int max_depth = 5;
 static Camera camera;
 static std::unique_ptr<Integrator> integrator =
     std::make_unique<SimpleIntegrator>(scene, camera);
+static std::unique_ptr<Sampler> sampler = std::make_unique<RandomSampler>();
+static int num_samples = 1;
 
 static glm::mat4 StackMatrices() {
   glm::mat4 m(1.0f);
@@ -83,21 +88,25 @@ int main(int argc, char *argv[]) {
       string name;
       ss >> name;
       if (name == "raytracer") {
-        auto simple_integrator = SimpleIntegrator(scene, camera);
-        simple_integrator.max_depth_ = max_depth;
-        integrator =
-            std::make_unique<SimpleIntegrator>(move(simple_integrator));
+        integrator = std::make_unique<SimpleIntegrator>(scene, camera);
       } else if (name == "analyticdirect") {
         integrator = std::make_unique<AnalyticDirectIntegrator>(scene, camera);
+      } else if (name == "direct") {
+        integrator = std::make_unique<DirectIntegrator>(scene, camera);
+      }
+    } else if (command == "lightsamples") {
+      ss >> num_samples;
+      sampler = std::make_unique<RandomSampler>();
+    } else if (command == "lightstratify") {
+      string op;
+      ss >> op;
+      if (op == "on") {
+        sampler = std::make_unique<StratifiedSampler>();
       }
     } else if (command == "size") {
       ss >> width >> height;
     } else if (command == "maxdepth") {
       ss >> max_depth;
-      if (const auto simple_integrator =
-              dynamic_cast<SimpleIntegrator *>(integrator.get())) {
-        simple_integrator->max_depth_ = max_depth;
-      }
     } else if (command == "output") {
       ss >> scene.output_file;
     } else if (command == "camera") {
@@ -186,6 +195,15 @@ int main(int argc, char *argv[]) {
     }
   }
   FinishMesh();
+
+  if (const auto simple_integrator =
+          dynamic_cast<SimpleIntegrator *>(integrator.get())) {
+    simple_integrator->max_depth_ = max_depth;
+  } else if (const auto direct_integrator =
+                 dynamic_cast<DirectIntegrator *>(integrator.get())) {
+    direct_integrator->sampler = sampler.get();
+    sampler->count = num_samples;
+  }
 
   cout << "Rendering..." << endl;
   auto image = integrator->Render();
