@@ -28,7 +28,7 @@ glm::vec3 DirectIntegrator::Shade(const Ray &ray) const {
         const auto light_sample = light->GenerateLightRay(x, sampler->Sample());
         const auto shadow_ray = light_sample.GetShadowRay();
         if (const auto shadow_hit = scene_.Trace(shadow_ray);
-            !shadow_hit || shadow_hit->t > 1.f) {
+            !shadow_hit || shadow_hit->t > .99f) {
           const auto w_i = normalize(shadow_ray.direction);
           const auto n_l = normalize(light_sample.normal);
           const auto R_2 = length2(light_sample.incident - light_sample.light);
