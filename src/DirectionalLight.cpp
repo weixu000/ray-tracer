@@ -10,5 +10,5 @@ DirectionalLight::DirectionalLight(const glm::vec3 &color,
 
 LightSample DirectionalLight::GenerateSample(const glm::vec3 &incident,
                                              const glm::vec2 &uv) const {
-  return LightSample{incident + direction_ * distance_, incident, intensity};
+  return LightSample{incident + direction_ * distance_, intensity};
 }

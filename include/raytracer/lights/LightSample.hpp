@@ -4,9 +4,9 @@
 #include "raytracer/Ray.hpp"
 
 struct LightSample {
-  glm::vec3 light, incident;
+  glm::vec3 light;
   glm::vec3 radience, normal;
   float jacobian;
 
-  Ray GetShadowRay() const;
+  Ray GetShadowRay(const glm::vec3 &incident) const;
 };

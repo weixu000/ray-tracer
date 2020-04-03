@@ -13,5 +13,5 @@ LightSample PointLight::GenerateSample(const glm::vec3 &incident,
   const auto d_l = length(d);
   const auto d_p = glm::vec3(1.f, d_l, d_l * d_l);
   const auto attenuation = dot(PointLight::attenuation, d_p);
-  return LightSample{position_, incident, intensity / attenuation};
+  return LightSample{position_, intensity / attenuation};
 }
