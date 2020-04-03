@@ -8,4 +8,5 @@ struct RayHit {
   float t;
   glm::vec3 normal;
   const Material *material = nullptr;
+  BRDF brdf;
 };

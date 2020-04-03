@@ -18,7 +18,7 @@ glm::vec3 DirectIntegrator::Shade(const Ray &ray) const {
 
   if (const auto hit = scene_.Trace(ray); hit && hit->t < t) {
     color = glm::vec3(0.f);
-    const auto &mat = *hit->material;
+    const auto &brdf = hit->brdf;
     const auto x = ray(hit->t), w_o = -normalize(ray.direction),
                n = normalize(hit->normal);
     for (const auto &light : scene_.lights) {
@@ -36,16 +36,9 @@ glm::vec3 DirectIntegrator::Shade(const Ray &ray) const {
         }
         if (const auto shadow_hit = scene_.Trace(shadow_ray);
             !shadow_hit || shadow_hit->t > .99f) {
-          const auto R_2 = length2(shadow_ray.direction);
-          const auto G = w_i_n * w_i_n_l / R_2;
-
-          const auto r = reflect(-w_o, n);
-          const auto f =
-              (mat.diffuse + mat.specular * (mat.shininess + 2) / 2.f *
-                                 pow(max(0.f, dot(r, w_i)), mat.shininess)) *
-              one_over_pi<float>();
-
-          radience += light_sample.radience * light_sample.jacobian * f * G;
+          const auto G = w_i_n * w_i_n_l / length2(shadow_ray.direction);
+          radience += light_sample.radience * light_sample.jacobian *
+                      brdf(w_i, w_o) * G;
         }
       }
       color += radience / float(sampler->count);
