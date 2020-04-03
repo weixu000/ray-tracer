@@ -12,5 +12,5 @@ public:
   AABB GetAABB() const override;
 
 private:
-  std::optional<RayHit> HitLocal(const Ray &ray) const override;
+  std::optional<LocalInfo> HitLocal(const Ray &ray) const override;
 };

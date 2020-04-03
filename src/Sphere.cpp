@@ -11,7 +11,7 @@ Sphere::Sphere(const glm::mat4 &transform, const glm::vec3 &position,
                float radius)
     : LocalShape(scale(translate(transform, position), vec3(radius))) {}
 
-std::optional<RayHit> Sphere::HitLocal(const Ray &ray) const {
+std::optional<LocalInfo> Sphere::HitLocal(const Ray &ray) const {
   const auto d = ray.direction, o = ray.origin;
   const auto d_o = dot(d, o);
   const auto d2 = length2(d);
@@ -21,9 +21,9 @@ std::optional<RayHit> Sphere::HitLocal(const Ray &ray) const {
   }
   const auto sqrt_disc = sqrt(discriminant);
   if (const auto t1 = (-d_o - sqrt_disc) / d2; t1 > FLT_EPSILON) {
-    return RayHit(t1, ray(t1));
+    return LocalInfo{t1, ray(t1)};
   } else if (const auto t2 = (-d_o + sqrt_disc) / d2; t2 > FLT_EPSILON) {
-    return RayHit(t2, ray(t2));
+    return LocalInfo{t2, ray(t2)};
   } else {
     return std::nullopt;
   }

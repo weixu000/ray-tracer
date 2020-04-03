@@ -9,7 +9,7 @@ public:
   Triangle(const glm::mat4 &transform, const glm::vec3 &v0, const glm::vec3 &v1,
            const glm::vec3 &v2);
 
-  std::optional<RayHit> Hit(const Ray &ray) const override;
+  std::optional<LocalInfo> Hit(const Ray &ray) const override;
 
   AABB GetAABB() const override { return aabb_; }
 

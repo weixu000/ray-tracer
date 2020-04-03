@@ -11,6 +11,8 @@ class Integrator {
 public:
   Integrator(const Scene &scene, const Camera &camera);
 
+  virtual ~Integrator() = default;
+
   std::vector<glm::u8vec3> Render() const;
 
 protected:

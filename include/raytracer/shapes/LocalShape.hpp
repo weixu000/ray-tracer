@@ -9,7 +9,7 @@ class LocalShape : public Shape {
 public:
   explicit LocalShape(const glm::mat4 &transform);
 
-  std::optional<RayHit> Hit(const Ray &ray) const override;
+  std::optional<LocalInfo> Hit(const Ray &ray) const override;
 
 protected:
   glm::mat4 world_{};
@@ -18,5 +18,5 @@ protected:
 
 private:
   // Hit in local space
-  virtual std::optional<RayHit> HitLocal(const Ray &ray) const = 0;
+  virtual std::optional<LocalInfo> HitLocal(const Ray &ray) const = 0;
 };

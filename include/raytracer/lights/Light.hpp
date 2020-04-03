@@ -10,7 +10,7 @@ class Scene;
 
 class Light {
 public:
-  explicit Light(const glm::vec3 &color);
+  explicit Light(const glm::vec3 &color) : intensity(color) {}
 
   virtual ~Light() = default;
 
