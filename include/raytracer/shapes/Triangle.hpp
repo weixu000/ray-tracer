@@ -11,7 +11,7 @@ public:
 
   std::optional<RayHit> Hit(const Ray &ray) const override;
 
-  AABB GetWorldAABB() const override { return aabb_; }
+  AABB GetAABB() const override { return aabb_; }
 
 private:
   glm::vec3 v0_, e1_, e2_, n_;

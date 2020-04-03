@@ -5,7 +5,7 @@ PrimitiveGroup::PrimitiveGroup(std::vector<Primitive> primitives)
   std::vector<AABB> boxes;
   boxes.reserve(primitives_.size());
   for (const auto &p : primitives_) {
-    boxes.push_back(p.GetWorldAABB());
+    boxes.push_back(p.GetAABB());
   }
   bvh_ = std::move(BVH(boxes));
 }

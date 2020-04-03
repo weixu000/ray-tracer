@@ -9,7 +9,8 @@ public:
 
   Sphere(const glm::mat4 &transform, const glm::vec3 &position, float radius);
 
-  std::optional<RayHit> Hit(const Ray &ray) const override;
+  AABB GetAABB() const override;
 
-  AABB GetWorldAABB() const override;
+private:
+  std::optional<RayHit> HitLocal(const Ray &ray) const override;
 };

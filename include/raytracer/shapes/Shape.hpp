@@ -15,5 +15,5 @@ public:
 
   virtual std::optional<RayHit> Hit(const Ray &ray) const = 0;
 
-  virtual AABB GetWorldAABB() const = 0;
+  virtual AABB GetAABB() const = 0;
 };

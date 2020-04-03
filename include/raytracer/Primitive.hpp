@@ -12,7 +12,7 @@ public:
 
   std::optional<RayHit> Hit(const Ray &ray) const;
 
-  AABB GetWorldAABB() const { return shape->GetWorldAABB(); }
+  AABB GetAABB() const { return shape->GetAABB(); }
 
 private:
   std::unique_ptr<Shape> shape;

@@ -17,6 +17,5 @@ public:
 
 private:
   std::vector<Primitive> primitives_;
-
   BVH bvh_;
 };
