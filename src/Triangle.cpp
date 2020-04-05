@@ -19,7 +19,7 @@ std::optional<LocalInfo> Triangle::Hit(const Ray &ray) const {
   const auto d = ray.direction, o = ray.origin;
   const auto h = cross(d, e2_);
   const auto a = dot(e1_, h);
-  if (a > -FLT_EPSILON && a < FLT_EPSILON) {
+  if (a == 0) {
     return std::nullopt; // This ray is parallel to this triangle.
   }
   const auto f = 1 / a;
@@ -34,7 +34,7 @@ std::optional<LocalInfo> Triangle::Hit(const Ray &ray) const {
     return std::nullopt;
   }
   const auto t = f * dot(e2_, q);
-  if (t > FLT_EPSILON) {
+  if (t > 0) {
     return LocalInfo{t, n_};
   } else {
     return std::nullopt;
