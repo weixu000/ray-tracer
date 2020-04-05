@@ -4,7 +4,9 @@
 
 #include "raytracer/shapes/Shape.hpp"
 
-// Handles local-world transform
+/**
+ * Special base class for shapes that handles local-world transform
+ */
 class LocalShape : public Shape {
 public:
   explicit LocalShape(const glm::mat4 &transform);

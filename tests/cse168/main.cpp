@@ -9,7 +9,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <raytracer/ImageWriter.hpp>
 #include <raytracer/Material.hpp>
 #include <raytracer/Scene.hpp>
 #include <raytracer/integrators/AnalyticDirectIntegrator.hpp>
@@ -38,6 +37,7 @@ static std::unique_ptr<Integrator> integrator =
     std::make_unique<SimpleIntegrator>(scene, camera);
 static std::unique_ptr<Sampler> sampler = std::make_unique<RandomSampler>();
 static int num_samples = 1;
+static string output_file;
 
 static glm::mat4 StackMatrices() {
   glm::mat4 m(1.0f);
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     } else if (command == "maxdepth") {
       ss >> max_depth;
     } else if (command == "output") {
-      ss >> scene.output_file;
+      ss >> output_file;
     } else if (command == "camera") {
       glm::vec3 look_from, look_at, up;
       float fov;
@@ -192,8 +192,7 @@ int main(int argc, char *argv[]) {
   }
 
   cout << "Rendering..." << endl;
-  auto image = integrator->Render();
-  ImageWriter::WriteTo(scene.output_file, width, height, image);
+  integrator->Render().WriteTo(output_file);
 
   return EXIT_SUCCESS;
 }

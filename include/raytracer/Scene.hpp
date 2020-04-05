@@ -10,10 +10,11 @@
 #include "raytracer/Ray.hpp"
 #include "raytracer/lights/Light.hpp"
 
+/**
+ * Hold primitives and lights
+ */
 class Scene {
 public:
-  std::string output_file;
-
   PrimitiveGroup group;
 
   std::vector<std::unique_ptr<Light>> lights;

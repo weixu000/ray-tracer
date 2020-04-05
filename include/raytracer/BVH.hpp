@@ -9,19 +9,22 @@
 #include "raytracer/Ray.hpp"
 #include "raytracer/RayHit.hpp"
 
+/**
+ * Bounding Volume Hierarchy
+ */
 class BVH {
 public:
   using Boxes = std::vector<AABB>;
   using Index = Boxes::size_type;
   using TraversalResult = std::pair<RayHit, Index>;
-  using IntersectIndex = std::function<std::optional<RayHit>(Index)>;
+  using HitFunction = std::function<std::optional<RayHit>(Index)>;
 
   BVH() = default;
 
   explicit BVH(const Boxes &boxes, size_t depth = 15, size_t leaf_size = 10);
 
   std::optional<TraversalResult> Traverse(const Ray &r,
-                                          const IntersectIndex &test) const;
+                                          const HitFunction &test) const;
 
 private:
   using Indices = std::vector<Index>;

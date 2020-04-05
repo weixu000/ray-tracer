@@ -10,8 +10,6 @@
 
 class Shape {
 public:
-  Shape() = default;
-
   virtual ~Shape() = default;
 
   virtual std::optional<LocalInfo> Hit(const Ray &ray) const = 0;

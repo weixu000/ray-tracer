@@ -2,10 +2,7 @@
 
 #include "raytracer/samplers/CenterSampler.hpp"
 
-Integrator::Integrator(const Scene &scene, const Camera &camera)
-    : scene_(scene), camera_(camera) {}
-
-std::vector<glm::u8vec3> Integrator::Render() const {
+Image Integrator::Render() const {
   using namespace glm;
 
   const auto w = camera_.width_;
@@ -13,7 +10,7 @@ std::vector<glm::u8vec3> Integrator::Render() const {
 
   CenterSampler sampler;
 
-  std::vector<u8vec3> output(w * h);
+  Image output(w, h);
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < w; ++j) {
       sampler.Reset();
@@ -21,7 +18,7 @@ std::vector<glm::u8vec3> Integrator::Render() const {
       const auto ray = camera_.GenerateEyeRay(pixel);
       const auto color = Shade(ray);
       assert(glm::all(glm::greaterThanEqual(color, glm::vec3(0.f))));
-      output[i * w + j] = u8vec3(min(color, vec3(1.f)) * 255.0f);
+      output.At(i, j) = u8vec3(min(color, vec3(1.f)) * 255.0f);
     }
   }
   return output;

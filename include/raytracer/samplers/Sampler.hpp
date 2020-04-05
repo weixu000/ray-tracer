@@ -1,9 +1,12 @@
 #pragma once
 #include <glm/glm.hpp>
 
+/**
+ * Generate samples in [0,1]x[0,1]
+ */
 class Sampler {
 public:
-  Sampler(int count = 1) : count(count) {}
+  explicit Sampler(int count = 1) : count(count) {}
 
   virtual ~Sampler() = default;
 

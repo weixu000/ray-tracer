@@ -1,19 +1,22 @@
 #pragma once
 
-#include <vector>
-
 #include <glm/glm.hpp>
 
 #include "raytracer/Camera.hpp"
+#include "raytracer/Image.hpp"
 #include "raytracer/Scene.hpp"
 
+/**
+ * Use camera to render the scene
+ */
 class Integrator {
 public:
-  Integrator(const Scene &scene, const Camera &camera);
+  Integrator(const Scene &scene, const Camera &camera)
+      : scene_(scene), camera_(camera) {}
 
   virtual ~Integrator() = default;
 
-  std::vector<glm::u8vec3> Render() const;
+  Image Render() const;
 
 protected:
   const Scene &scene_;

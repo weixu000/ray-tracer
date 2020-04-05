@@ -6,6 +6,9 @@
 
 #include "raytracer/integrators/Integrator.hpp"
 
+/**
+ * Recursive raytracing
+ */
 class SimpleIntegrator : public Integrator {
 public:
   using Integrator::Integrator;

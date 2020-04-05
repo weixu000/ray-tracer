@@ -21,7 +21,7 @@ BVH::BVH(const Boxes &boxes, size_t depth, size_t leaf_size) {
 }
 
 std::optional<BVH::TraversalResult>
-BVH::Traverse(const Ray &r, const IntersectIndex &test) const {
+BVH::Traverse(const Ray &r, const HitFunction &test) const {
   std::stack<const Node *> stack;
   stack.push(root_.get());
 

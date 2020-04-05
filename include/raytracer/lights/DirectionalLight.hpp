@@ -5,10 +5,13 @@
 
 class DirectionalLight : public Light {
 public:
-  DirectionalLight(const glm::vec3 &color, const glm::vec3 &direction);
+  DirectionalLight(const glm::vec3 &color, const glm::vec3 &direction)
+      : Light(color), direction_(glm::normalize(direction)) {}
 
   LightSample GenerateSample(const glm::vec3 &incident,
-                             const glm::vec2 &uv) const override;
+                             const glm::vec2 &uv) const override {
+    return LightSample{incident + direction_ * distance_, intensity};
+  }
 
   std::optional<float> Hit(const Ray &ray) const override {
     return std::nullopt;

@@ -1,10 +1,8 @@
 #include "raytracer/AABB.hpp"
 
-#include <utility>
-
-using namespace std;
-
 bool AABB::Hit(const Ray &ray) const {
+  using namespace std;
+
   auto tmin = (min.x - ray.origin.x) / ray.direction.x;
   auto tmax = (max.x - ray.origin.x) / ray.direction.x;
   if (tmin > tmax)
@@ -30,10 +28,3 @@ bool AABB::Hit(const Ray &ray) const {
 
   return !((tmin > tzmax) || (tzmin > tmax));
 }
-
-void AABB::Union(const AABB &other) {
-  min = glm::min(min, other.min);
-  max = glm::max(max, other.max);
-}
-
-glm::vec3 AABB::Center() const { return (min + max) / 2.f; }

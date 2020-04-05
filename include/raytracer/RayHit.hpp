@@ -4,6 +4,9 @@
 
 #include "raytracer/Material.hpp"
 
+/**
+ * local info of the primitive hit by the ray
+ */
 struct RayHit {
   float t;
   glm::vec3 normal;
