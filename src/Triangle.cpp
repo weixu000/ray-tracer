@@ -2,8 +2,10 @@
 
 using namespace glm;
 
-Triangle::Triangle(const glm::mat4 &transform, const glm::vec3 &v0,
-                   const glm::vec3 &v1, const glm::vec3 &v2) {
+Triangle::Triangle(const Material &mat, const glm::mat4 &transform,
+                   const glm::vec3 &v0, const glm::vec3 &v1,
+                   const glm::vec3 &v2)
+    : Shape(mat) {
   const auto v0_w = vec3(transform * vec4(v0, 1.f)),
              v1_w = vec3(transform * vec4(v1, 1.f)),
              v2_w = vec3(transform * vec4(v2, 1.f));

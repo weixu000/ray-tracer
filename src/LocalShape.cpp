@@ -1,7 +1,7 @@
 #include "raytracer/shapes/LocalShape.hpp"
 
-LocalShape::LocalShape(const glm::mat4 &transform)
-    : world_(transform), local_(inverse(transform)),
+LocalShape::LocalShape(const Material &mat, const glm::mat4 &transform)
+    : Shape(mat), world_(transform), local_(inverse(transform)),
       normal_world_(glm::inverse(glm::transpose(glm::mat3(transform)))) {}
 
 std::optional<LocalInfo> LocalShape::Hit(const Ray &ray) const {

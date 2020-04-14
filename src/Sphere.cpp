@@ -5,9 +5,16 @@
 
 using namespace glm;
 
-Sphere::Sphere(const glm::mat4 &transform, const glm::vec3 &position,
-               float radius)
-    : LocalShape(scale(translate(transform, position), vec3(radius))) {}
+Sphere::Sphere(const Material &mat, const glm::mat4 &transform,
+               const glm::vec3 &position, float radius)
+    : LocalShape(mat, scale(translate(transform, position), vec3(radius))) {
+  // https://tavianator.com/exact-bounding-boxes-for-spheres-ellipsoids/
+  const auto M3x3 = mat3(world_);
+  const auto M3x3_2 = matrixCompMult(M3x3, M3x3);
+  const auto d = sqrt(M3x3_2[0] + M3x3_2[1] + M3x3_2[2]);
+  const auto v = vec3(world_[3]);
+  aabb_ = AABB{v - d, v + d};
+}
 
 std::optional<LocalInfo> Sphere::HitLocal(const Ray &ray) const {
   const auto d = ray.direction, o = ray.origin;
@@ -25,13 +32,4 @@ std::optional<LocalInfo> Sphere::HitLocal(const Ray &ray) const {
   } else {
     return std::nullopt;
   }
-}
-
-AABB Sphere::GetAABB() const {
-  // https://tavianator.com/exact-bounding-boxes-for-spheres-ellipsoids/
-  const auto M3x3 = mat3(world_);
-  const auto M3x3_2 = matrixCompMult(M3x3, M3x3);
-  const auto d = sqrt(M3x3_2[0] + M3x3_2[1] + M3x3_2[2]);
-  const auto v = vec3(world_[3]);
-  return AABB{v - d, v + d};
 }

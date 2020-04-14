@@ -6,9 +6,9 @@
 
 #include <glm/glm.hpp>
 
-#include "raytracer/PrimitiveGroup.hpp"
 #include "raytracer/Ray.hpp"
 #include "raytracer/lights/Light.hpp"
+#include "raytracer/primitives/PrimitiveGroup.hpp"
 
 /**
  * Hold primitives and lights

@@ -15,7 +15,6 @@
 #include <raytracer/integrators/DirectIntegrator.hpp>
 #include <raytracer/integrators/SimpleIntegrator.hpp>
 #include <raytracer/lights/DirectionalLight.hpp>
-#include <raytracer/lights/Light.hpp>
 #include <raytracer/lights/PointLight.hpp>
 #include <raytracer/lights/QuadLight.hpp>
 #include <raytracer/samplers/RandomSampler.hpp>
@@ -27,7 +26,7 @@ using namespace std;
 
 static Scene scene;
 static vector<glm::mat4> transform_stack;
-static std::vector<Primitive> primitives;
+static std::vector<unique_ptr<Shape>> shapes;
 static std::vector<glm::vec3> verts;
 static Material current_material;
 static int width, height;
@@ -111,9 +110,8 @@ int main(int argc, char *argv[]) {
       glm::vec3 position;
       float rad;
       ss >> position >> rad;
-      primitives.emplace_back(
-          make_unique<Sphere>(StackMatrices(), position, rad),
-          current_material);
+      shapes.emplace_back(make_unique<Sphere>(current_material, StackMatrices(),
+                                              position, rad));
     } else if (command == "maxverts") {
       continue; // Not used
     } else if (command == "vertex") {
@@ -123,10 +121,9 @@ int main(int argc, char *argv[]) {
     } else if (command == "tri") {
       glm::ivec3 t;
       ss >> t;
-      primitives.emplace_back(make_unique<Triangle>(StackMatrices(),
-                                                    verts[t[0]], verts[t[1]],
-                                                    verts[t[2]]),
-                              current_material);
+      shapes.emplace_back(make_unique<Triangle>(current_material,
+                                                StackMatrices(), verts[t[0]],
+                                                verts[t[1]], verts[t[2]]));
     } else if (command == "maxvertnorms") {
       continue; // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {
@@ -180,7 +177,7 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
   }
-  scene.group = move(PrimitiveGroup(move(primitives)));
+  scene.group = move(PrimitiveGroup(move(shapes)));
 
   if (const auto simple_integrator =
           dynamic_cast<SimpleIntegrator *>(integrator.get())) {

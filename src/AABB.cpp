@@ -1,4 +1,4 @@
-#include "raytracer/AABB.hpp"
+#include "raytracer/primitives/AABB.hpp"
 
 bool AABB::Hit(const Ray &ray) const {
   using namespace std;

@@ -9,7 +9,7 @@
  */
 class LocalShape : public Shape {
 public:
-  explicit LocalShape(const glm::mat4 &transform);
+  LocalShape(const Material &mat, const glm::mat4 &transform);
 
   std::optional<LocalInfo> Hit(const Ray &ray) const override;
 
