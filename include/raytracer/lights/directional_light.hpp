@@ -1,23 +1,17 @@
 #pragma once
 
-#include <raytracer/lights/light.hpp>
+#include <raytracer/lights/delta_light.hpp>
 
-class DirectionalLight : public Light {
+class DirectionalLight : public DeltaLight {
 public:
-  DirectionalLight(const glm::vec3 &color, const glm::vec3 &direction)
-      : Light(color), direction_(glm::normalize(direction)) {}
+  DirectionalLight(const glm::vec3 &irradiance, const glm::vec3 &direction)
+      : irradiance_(irradiance), direction_(glm::normalize(direction)) {}
 
-  LightSample GenerateSample(const glm::vec3 &incident,
-                             const glm::vec2 &uv) const override {
-    return LightSample{incident + direction_ * distance_, intensity};
-  }
-
-  std::optional<float> Hit(const Ray &ray) const override {
-    return std::nullopt;
+  LightRay GetRay(const glm::vec3 &x) const override {
+    return LightRay{direction_, irradiance_, FLT_MAX};
   }
 
 private:
+  glm::vec3 irradiance_;
   glm::vec3 direction_;  // Direction towards the light source
-
-  static inline const float distance_ = 1000.f;  // How far away the light is
 };

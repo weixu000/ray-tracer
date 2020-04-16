@@ -149,17 +149,18 @@ int main(int argc, char *argv[]) {
     } else if (command == "directional") {
       glm::vec3 direction, color;
       ss >> direction >> color;
-      scene.lights.push_back(make_unique<DirectionalLight>(color, direction));
+      scene.delta_lights.push_back(
+          make_unique<DirectionalLight>(color, direction));
     } else if (command == "point") {
       glm::vec3 position, color;
       ss >> position >> color;
-      scene.lights.push_back(make_unique<PointLight>(color, position));
+      scene.delta_lights.push_back(make_unique<PointLight>(color, position));
     } else if (command == "quadLight") {
       glm::vec3 v0, e1, e2, intensity;
       ss >> v0 >> e1 >> e2 >> intensity;
       scene.lights.push_back(make_unique<QuadLight>(intensity, v0, e1, e2));
     } else if (command == "attenuation") {
-      ss >> PointLight::attenuation;
+      // ss >> PointLight::attenuation;
     } else if (command == "ambient") {
       ss >> current_material.ambient;
     } else if (command == "diffuse") {

@@ -8,9 +8,9 @@ glm::vec3 DirectIntegrator::Shade(const Ray &ray) const {
   auto color = glm::vec3(0.f);
   auto t = FLT_MAX;
   for (const auto &light : scene_.lights) {
-    if (const auto hit = light->Hit(ray); hit && *hit < t) {
-      color = light->intensity;
-      t = *hit;
+    if (const auto hit = light->Hit(ray); hit && hit->distance < t) {
+      color = hit->L_e;
+      t = hit->distance;
     }
   }
 
@@ -21,9 +21,9 @@ glm::vec3 DirectIntegrator::Shade(const Ray &ray) const {
                n = normalize(hit->normal);
     for (const auto &light : scene_.lights) {
       sampler->Reset();
-      auto radience = glm::vec3(0.f);
+      auto radiance = glm::vec3(0.f);
       for (int i_sample = 0; i_sample < sampler->count; ++i_sample) {
-        const auto light_sample = light->GenerateSample(x, sampler->Sample());
+        const auto light_sample = light->GetSample(x, sampler->Sample());
         const auto w_i = normalize(light_sample.light - x);
         const auto n_l = normalize(light_sample.normal);
         const auto w_i_n = dot(w_i, n), w_i_n_l = dot(w_i, n_l);
@@ -33,11 +33,11 @@ glm::vec3 DirectIntegrator::Shade(const Ray &ray) const {
         if (const auto shadow_hit = scene_.Trace(light_sample.GetShadowRay(x));
             !shadow_hit || shadow_hit->t > .99f) {
           const auto G = w_i_n * w_i_n_l / length2(light_sample.light - x);
-          radience += light_sample.radience * light_sample.jacobian *
+          radiance += light_sample.radience * light_sample.jacobian *
                       brdf(w_i, w_o) * G;
         }
       }
-      color += radience / float(sampler->count);
+      color += radiance / float(sampler->count);
     }
   }
   return color;

@@ -9,25 +9,25 @@ glm::vec3 SimpleIntegrator::Shade(const Ray &ray, int depth) const {
 
   if (const auto hit = scene_.Trace(ray)) {
     const auto &mat = *hit->material;
-    const auto incident = ray(hit->t), V = -normalize(ray.direction),
-               N = normalize(hit->normal);
-    auto color = mat.ambient + mat.emission;
-    for (const auto &light : scene_.lights) {
-      const auto light_sample = light->GenerateSample(incident, glm::vec2());
-      const auto shadow_ray = light_sample.GetShadowRay(incident);
-      if (const auto shadow_hit = scene_.Trace(shadow_ray);
-          !shadow_hit || shadow_hit->t > .99f) {
-        const auto L = normalize(shadow_ray.direction);
-        const auto H = normalize(V + L);
-        color += light_sample.radience *
-                 (mat.diffuse * max(0.f, dot(N, L)) +
-                  mat.specular * pow(max(0.f, dot(N, H)), mat.shininess));
+    const auto x = ray(hit->t), w_o = -normalize(ray.direction),
+               n = normalize(hit->normal);
+    auto radiance = mat.ambient + mat.emission;
+    for (const auto &light : scene_.delta_lights) {
+      const auto light_ray = light->GetRay(x);
+      if (const auto shadow_hit = scene_.Trace(light_ray.GetShadowRay(x));
+          !shadow_hit || shadow_hit->t > light_ray.distance) {
+        const auto w_i = normalize(light_ray.w_i);
+        const auto halfway = normalize(w_i + w_o);
+        radiance +=
+            light_ray.color *
+            (mat.diffuse * max(0.f, dot(n, w_i)) +
+             mat.specular * pow(max(0.f, dot(n, halfway)), mat.shininess));
       }
     }
-    const auto R = reflect(-V, N);
-    const auto reflect_ray = Ray{incident + R * SHADOW_EPSILON, R};
-    color += mat.specular * Shade(reflect_ray, depth - 1);
-    return color;
+    const auto R = reflect(-w_o, n);
+    const auto reflect_ray = Ray{x + R * SHADOW_EPSILON, R};
+    radiance += mat.specular * Shade(reflect_ray, depth - 1);
+    return radiance;
   } else {
     return glm::vec3(0.f);
   }
