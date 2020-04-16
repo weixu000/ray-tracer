@@ -21,40 +21,42 @@
 #include <raytracer/shapes/triangle.hpp>
 
 using namespace std;
+using namespace glm;
 
-static Scene scene;
-static vector<glm::mat4> transform_stack;
-static std::vector<unique_ptr<Shape>> shapes;
-static std::vector<glm::vec3> verts;
-static Material current_material;
-static int width, height;
-static int max_depth = 5;
-static Camera camera;
-static std::unique_ptr<Integrator> integrator =
-    std::make_unique<SimpleIntegrator>(scene, camera);
-static std::unique_ptr<Sampler> sampler = std::make_unique<RandomSampler>();
-static int num_samples = 1;
-static string output_file;
-
-static glm::mat4 StackMatrices() {
-  glm::mat4 m(1.0f);
+namespace {
+mat4 StackMatrices(const vector<mat4> &transform_stack) {
+  mat4 m(1.0f);
   for (const auto &x : transform_stack) {
     m *= x;
   }
   return m;
 }
 
-template <class CharT, class Traits, glm::length_t L, typename T,
-          glm::qualifier Q>
-static std::basic_istream<CharT, Traits> &operator>>(
-    std::basic_istream<CharT, Traits> &is, glm::vec<L, T, Q> &v) {
+template <class CharT, class Traits, length_t L, typename T, qualifier Q>
+basic_istream<CharT, Traits> &operator>>(basic_istream<CharT, Traits> &is,
+                                         vec<L, T, Q> &v) {
   for (int i = 0; i < v.length(); ++i) {
     is >> v[i];
   }
   return is;
 }
+}  // namespace
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
+  Scene scene;
+  vector<mat4> transform_stack;
+  vector<unique_ptr<Shape>> shapes;
+  vector<vec3> verts;
+  Material current_material;
+  int width, height;
+  int max_depth = 5;
+  Camera camera;
+  unique_ptr<Integrator> integrator =
+      make_unique<SimpleIntegrator>(scene, camera);
+  unique_ptr<Sampler> sampler = make_unique<RandomSampler>();
+  int num_samples = 1;
+  string output_file;
+
   if (argc != 2) {
     cerr << "Incorrect command-line options" << endl;
     return EXIT_FAILURE;
@@ -78,20 +80,20 @@ int main(int argc, char *argv[]) {
       string name;
       ss >> name;
       if (name == "raytracer") {
-        integrator = std::make_unique<SimpleIntegrator>(scene, camera);
+        integrator = make_unique<SimpleIntegrator>(scene, camera);
       } else if (name == "analyticdirect") {
-        integrator = std::make_unique<AnalyticDirectIntegrator>(scene, camera);
+        integrator = make_unique<AnalyticDirectIntegrator>(scene, camera);
       } else if (name == "direct") {
-        integrator = std::make_unique<DirectIntegrator>(scene, camera);
+        integrator = make_unique<DirectIntegrator>(scene, camera);
       }
     } else if (command == "lightsamples") {
       ss >> num_samples;
-      sampler = std::make_unique<RandomSampler>();
+      sampler = make_unique<RandomSampler>();
     } else if (command == "lightstratify") {
       string op;
       ss >> op;
       if (op == "on") {
-        sampler = std::make_unique<StratifiedSampler>();
+        sampler = make_unique<StratifiedSampler>();
       }
     } else if (command == "size") {
       ss >> width >> height;
@@ -100,28 +102,28 @@ int main(int argc, char *argv[]) {
     } else if (command == "output") {
       ss >> output_file;
     } else if (command == "camera") {
-      glm::vec3 look_from, look_at, up;
+      vec3 look_from, look_at, up;
       float fov;
       ss >> look_from >> look_at >> up >> fov;
       camera = Camera(look_from, look_at, up, fov, width, height);
     } else if (command == "sphere") {
-      glm::vec3 position;
+      vec3 position;
       float rad;
       ss >> position >> rad;
-      shapes.emplace_back(make_unique<Sphere>(current_material, StackMatrices(),
-                                              position, rad));
+      shapes.emplace_back(make_unique<Sphere>(
+          current_material, StackMatrices(transform_stack), position, rad));
     } else if (command == "maxverts") {
       continue;  // Not used
     } else if (command == "vertex") {
-      glm::vec3 v;
+      vec3 v;
       ss >> v;
       verts.push_back(v);
     } else if (command == "tri") {
-      glm::ivec3 t;
+      ivec3 t;
       ss >> t;
-      shapes.emplace_back(make_unique<Triangle>(current_material,
-                                                StackMatrices(), verts[t[0]],
-                                                verts[t[1]], verts[t[2]]));
+      shapes.emplace_back(make_unique<Triangle>(
+          current_material, StackMatrices(transform_stack), verts[t[0]],
+          verts[t[1]], verts[t[2]]));
     } else if (command == "maxvertnorms") {
       continue;  // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {
@@ -129,34 +131,34 @@ int main(int argc, char *argv[]) {
     } else if (command == "trinormal") {
       continue;  // TODO: implement triangle-with-normal
     } else if (command == "translate") {
-      glm::vec3 v;
+      vec3 v;
       ss >> v;
-      transform_stack.back() = glm::translate(transform_stack.back(), v);
+      transform_stack.back() = translate(transform_stack.back(), v);
     } else if (command == "rotate") {
-      glm::vec3 v;
+      vec3 v;
       float angle;
       ss >> v >> angle;
       transform_stack.back() =
-          glm::rotate(transform_stack.back(), glm::radians(angle), v);
+          rotate(transform_stack.back(), radians(angle), v);
     } else if (command == "scale") {
-      glm::vec3 v;
+      vec3 v;
       ss >> v;
-      transform_stack.back() = glm::scale(transform_stack.back(), v);
+      transform_stack.back() = scale(transform_stack.back(), v);
     } else if (command == "pushTransform") {
       transform_stack.emplace_back(1.0f);
     } else if (command == "popTransform") {
       transform_stack.pop_back();
     } else if (command == "directional") {
-      glm::vec3 direction, color;
+      vec3 direction, color;
       ss >> direction >> color;
       scene.delta_lights.push_back(
           make_unique<DirectionalLight>(color, direction));
     } else if (command == "point") {
-      glm::vec3 position, color;
+      vec3 position, color;
       ss >> position >> color;
       scene.delta_lights.push_back(make_unique<PointLight>(color, position));
     } else if (command == "quadLight") {
-      glm::vec3 v0, e1, e2, intensity;
+      vec3 v0, e1, e2, intensity;
       ss >> v0 >> e1 >> e2 >> intensity;
       scene.lights.push_back(make_unique<QuadLight>(intensity, v0, e1, e2));
     } else if (command == "attenuation") {
@@ -189,6 +191,4 @@ int main(int argc, char *argv[]) {
 
   cout << "Rendering..." << endl;
   integrator->Render().WriteTo(output_file);
-
-  return EXIT_SUCCESS;
 }
