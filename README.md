@@ -9,9 +9,7 @@ URL to image-grader: https://lifan.s3.amazonaws.com/homework1/3e15c0ae2494fb5f5c
 - Use CMake to build
     - C++ 17 may be required
     - I only tested on Windows with MinGW-w64
-    - Main `raytracer` is a lib, exe is in `/tests/cse168`
 - `/externs` contains 3rd-party libraries
-    - `glm` for math functions
     - `stb-cmake` for image output
 
 # Acceleration structure
