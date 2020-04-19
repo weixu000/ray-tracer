@@ -7,23 +7,21 @@ glm::vec3 DirectIntegrator::ShadePixel(const glm::vec2 &pixel) const {
 
   const auto ray = camera_.GenerateEyeRay(pixel + .5f);
 
-  auto color = glm::vec3(0.f);
+  auto color = vec3(0.f);
   auto t = FLT_MAX;
-  for (const auto &light : scene_.lights) {
-    if (const auto hit = light->Hit(ray); hit && hit->distance < t) {
-      color = hit->L_e;
-      t = hit->distance;
-    }
+  if (const auto hit = scene_.TraceLight(ray)) {
+    color = hit->L_e;
+    t = hit->distance;
   }
 
   if (const auto hit = scene_.Trace(ray); hit && hit->t < t) {
-    color = glm::vec3(0.f);
+    color = vec3(0.f);
     const auto &brdf = hit->brdf;
     const auto x = ray(hit->t), w_o = -normalize(ray.direction),
                n = normalize(hit->normal);
     for (const auto &light : scene_.lights) {
       sampler->Reset();
-      auto radiance = glm::vec3(0.f);
+      auto radiance = vec3(0.f);
       for (int i_sample = 0; i_sample < sampler->count; ++i_sample) {
         const auto light_sample = light->GetSample(x, sampler->Sample());
         const auto w_i = normalize(light_sample.light - x);

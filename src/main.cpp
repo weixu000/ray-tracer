@@ -11,6 +11,7 @@
 
 #include <raytracer/integrators/analytic_direct_integrator.hpp>
 #include <raytracer/integrators/direct_integrator.hpp>
+#include <raytracer/integrators/path_integrator.hpp>
 #include <raytracer/integrators/simple_integrator.hpp>
 #include <raytracer/lights/directional_light.hpp>
 #include <raytracer/lights/point_light.hpp>
@@ -87,6 +88,8 @@ int main(int argc, char **argv) {
         integrator = make_unique<AnalyticDirectIntegrator>(scene, camera);
       } else if (name == "direct") {
         integrator = make_unique<DirectIntegrator>(scene, camera);
+      } else if (name == "pathtracer") {
+        integrator = make_unique<PathIntegrator>(scene, camera);
       }
     } else if (command == "lightsamples") {
       ss >> num_light_samples;
@@ -191,6 +194,10 @@ int main(int argc, char **argv) {
                  dynamic_cast<DirectIntegrator *>(integrator.get())) {
     light_sampler->count = num_light_samples;
     direct_integrator->sampler = move(light_sampler);
+  } else if (const auto path_integrator =
+                 dynamic_cast<PathIntegrator *>(integrator.get())) {
+    path_integrator->max_depth_ = max_depth;
+    path_integrator->num_sample_ = num_pixel_samples;
   }
 
   cout << "Rendering..." << endl;
