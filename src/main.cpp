@@ -15,8 +15,9 @@
 #include <raytracer/lights/directional_light.hpp>
 #include <raytracer/lights/point_light.hpp>
 #include <raytracer/lights/quad_light.hpp>
-#include <raytracer/samplers/random_sampler.hpp>
-#include <raytracer/samplers/stratified_sampler.hpp>
+#include <raytracer/samplers/independent_multisampler.hpp>
+#include <raytracer/samplers/square_sampler.hpp>
+#include <raytracer/samplers/stratified_multisampler.hpp>
 #include <raytracer/shapes/sphere.hpp>
 #include <raytracer/shapes/triangle.hpp>
 
@@ -53,8 +54,9 @@ int main(int argc, char **argv) {
   Camera camera;
   unique_ptr<Integrator> integrator =
       make_unique<SimpleIntegrator>(scene, camera);
-  unique_ptr<Sampler> sampler = make_unique<RandomSampler>();
-  int num_samples = 1;
+  unique_ptr<Multisampler> light_sampler =
+      make_unique<IndependentMultisampler<SquareSampler>>();
+  int num_light_samples = 1, num_pixel_samples = 1;
   string output_file;
 
   if (argc != 2) {
@@ -87,14 +89,16 @@ int main(int argc, char **argv) {
         integrator = make_unique<DirectIntegrator>(scene, camera);
       }
     } else if (command == "lightsamples") {
-      ss >> num_samples;
-      sampler = make_unique<RandomSampler>();
+      ss >> num_light_samples;
+      light_sampler = make_unique<IndependentMultisampler<SquareSampler>>();
     } else if (command == "lightstratify") {
       string op;
       ss >> op;
       if (op == "on") {
-        sampler = make_unique<StratifiedSampler>();
+        light_sampler = make_unique<StratifiedMultisampler>();
       }
+    } else if (command == "spp") {
+      ss >> num_pixel_samples;
     } else if (command == "size") {
       ss >> width >> height;
     } else if (command == "maxdepth") {
