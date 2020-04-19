@@ -3,8 +3,10 @@
 #include <raytracer/integrators/analytic_direct_integrator.hpp>
 #include <raytracer/lights/quad_light.hpp>
 
-glm::vec3 AnalyticDirectIntegrator::Shade(const Ray &ray) const {
+glm::vec3 AnalyticDirectIntegrator::ShadePixel(const glm::vec2 &pixel) const {
   using namespace glm;
+
+  const auto ray = camera_.GenerateEyeRay(pixel + .5f);
 
   for (const auto &light : scene_.lights) {
     if (const auto quad = dynamic_cast<QuadLight *>(light.get())) {

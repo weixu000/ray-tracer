@@ -20,9 +20,8 @@ public:
 
 protected:
   const Scene &scene_;
+  const Camera &camera_;
 
 private:
-  virtual glm::vec3 Shade(const Ray &ray) const = 0;
-
-  const Camera &camera_;
+  virtual glm::vec3 ShadePixel(const glm::vec2 &pixel) const = 0;
 };

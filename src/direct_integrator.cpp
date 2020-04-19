@@ -2,8 +2,10 @@
 
 #include <raytracer/integrators/direct_integrator.hpp>
 
-glm::vec3 DirectIntegrator::Shade(const Ray &ray) const {
+glm::vec3 DirectIntegrator::ShadePixel(const glm::vec2 &pixel) const {
   using namespace glm;
+
+  const auto ray = camera_.GenerateEyeRay(pixel + .5f);
 
   auto color = glm::vec3(0.f);
   auto t = FLT_MAX;

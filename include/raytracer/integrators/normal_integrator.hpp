@@ -10,13 +10,15 @@ public:
   using Integrator::Integrator;
 
 private:
-  glm::vec3 Shade(const Ray &ray) const override {
+  glm::vec3 ShadePixel(const glm::vec2 &pixel) const override {
     using namespace glm;
 
-    auto color = vec3(0.f);
+    const auto ray = camera_.GenerateEyeRay(pixel + .5f);
+
     if (const auto hit = scene_.Trace(ray)) {
-      color = (normalize(hit->normal) + 1.f) / 2.f;
+      return (normalize(hit->normal) + 1.f) / 2.f;
+    } else {
+      return vec3(0.f);
     }
-    return color;
   }
 };

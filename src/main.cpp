@@ -185,8 +185,8 @@ int main(int argc, char **argv) {
     simple_integrator->max_depth_ = max_depth;
   } else if (const auto direct_integrator =
                  dynamic_cast<DirectIntegrator *>(integrator.get())) {
-    direct_integrator->sampler = sampler.get();
-    sampler->count = num_samples;
+    light_sampler->count = num_light_samples;
+    direct_integrator->sampler = move(light_sampler);
   }
 
   cout << "Rendering..." << endl;

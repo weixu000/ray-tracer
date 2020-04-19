@@ -7,5 +7,5 @@ public:
   using Integrator::Integrator;
 
 private:
-  glm::vec3 Shade(const Ray &ray) const override;
+  glm::vec3 ShadePixel(const glm::vec2 &pixel) const override;
 };
