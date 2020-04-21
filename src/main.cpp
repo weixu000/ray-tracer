@@ -59,6 +59,7 @@ int main(int argc, char **argv) {
       make_unique<IndependentMultisampler<SquareSampler>>();
   int num_light_samples = 1, num_pixel_samples = 1;
   string output_file;
+  bool nexteventestimation = false;
 
   if (argc != 2) {
     cerr << "Incorrect command-line options" << endl;
@@ -93,7 +94,6 @@ int main(int argc, char **argv) {
       }
     } else if (command == "lightsamples") {
       ss >> num_light_samples;
-      light_sampler = make_unique<IndependentMultisampler<SquareSampler>>();
     } else if (command == "lightstratify") {
       string op;
       ss >> op;
@@ -102,6 +102,12 @@ int main(int argc, char **argv) {
       }
     } else if (command == "spp") {
       ss >> num_pixel_samples;
+    } else if (command == "nexteventestimation") {
+      string op;
+      ss >> op;
+      if (op == "on") {
+        nexteventestimation = true;
+      }
     } else if (command == "size") {
       ss >> width >> height;
     } else if (command == "maxdepth") {
@@ -187,17 +193,20 @@ int main(int argc, char **argv) {
   }
   scene.group = move(PrimitiveGroup(move(shapes)));
 
+  light_sampler->count = num_light_samples;
+
   if (const auto simple_integrator =
           dynamic_cast<SimpleIntegrator *>(integrator.get())) {
     simple_integrator->max_depth_ = max_depth;
   } else if (const auto direct_integrator =
                  dynamic_cast<DirectIntegrator *>(integrator.get())) {
-    light_sampler->count = num_light_samples;
     direct_integrator->sampler = move(light_sampler);
-  } else if (const auto path_integrator =
-                 dynamic_cast<PathIntegrator *>(integrator.get())) {
-    path_integrator->max_depth_ = max_depth;
-    path_integrator->num_sample_ = num_pixel_samples;
+    if (const auto path_integrator =
+            dynamic_cast<PathIntegrator *>(integrator.get())) {
+      path_integrator->max_depth_ = max_depth;
+      path_integrator->num_sample_ = num_pixel_samples;
+      path_integrator->next_event_ = nexteventestimation;
+    }
   }
 
   cout << "Rendering..." << endl;

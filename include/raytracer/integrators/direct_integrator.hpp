@@ -11,6 +11,10 @@ public:
 
   std::unique_ptr<const Multisampler> sampler;
 
+protected:
+  glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,
+                        const glm::vec3& w_o, const BRDF& brdf) const;
+
 private:
-  glm::vec3 ShadePixel(const glm::vec2 &pixel) const override;
+  glm::vec3 ShadePixel(const glm::vec2& pixel) const override;
 };
