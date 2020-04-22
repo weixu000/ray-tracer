@@ -13,9 +13,10 @@ struct LightSample {
   glm::vec3 light;
   glm::vec3 radience, normal;
   float jacobian;  // jacobian determinant
+  float distance;
 
   Ray GetShadowRay(const glm::vec3 &x) const {
-    const auto d = light - x;
+    const auto d = glm::normalize(light - x);
     return Ray{x + d * SHADOW_EPSILON, d};
   }
 };

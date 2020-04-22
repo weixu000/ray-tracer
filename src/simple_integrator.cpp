@@ -7,14 +7,13 @@ glm::vec3 SimpleIntegrator::Shade(const Ray &ray, int depth) const {
     return glm::vec3(0.f);
   }
 
-  if (const auto hit = scene_.Trace(ray)) {
+  if (const auto hit = scene_.TraceShapes(ray)) {
     const auto &mat = *hit->material;
-    const auto x = ray(hit->t), w_o = -normalize(ray.direction),
-               n = normalize(hit->normal);
+    const auto x = ray(hit->t), w_o = -ray.direction, n = hit->normal;
     auto radiance = mat.ambient + mat.emission;
     for (const auto &light : scene_.delta_lights) {
       const auto light_ray = light->GetRay(x);
-      if (const auto shadow_hit = scene_.Trace(light_ray.GetShadowRay(x));
+      if (const auto shadow_hit = scene_.TraceShapes(light_ray.GetShadowRay(x));
           !shadow_hit || shadow_hit->t > light_ray.distance) {
         const auto w_i = normalize(light_ray.w_i);
         const auto halfway = normalize(w_i + w_o);

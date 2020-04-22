@@ -2,6 +2,9 @@
 
 #include <glm/glm.hpp>
 
+/**
+ * Direction is normalized
+ */
 struct Ray {
   glm::vec3 origin, direction;
 

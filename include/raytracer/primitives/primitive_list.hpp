@@ -33,6 +33,9 @@ public:
     }
     std::optional<RayHit> ret;
     for (const auto &p : primitives_) {
+      if (!p->GetAABB().Hit(ray)) {
+        continue;
+      }
       if (const auto hit = p->HitMaterial(ray);
           hit && (!ret || hit->t < ret->t)) {
         ret = hit;

@@ -7,20 +7,13 @@ glm::vec3 DirectIntegrator::ShadePixel(const glm::vec2& pixel) const {
 
   const auto ray = camera_.GenerateEyeRay(pixel + .5f);
 
-  auto color = vec3(0.f);
-  auto t = FLT_MAX;
-  if (const auto hit = scene_.TraceLight(ray)) {
-    color = hit->L_e;
-    t = hit->distance;
-  }
-
-  if (const auto hit = scene_.Trace(ray); hit && hit->t < t) {
-    const auto& brdf = hit->brdf;
-    const auto x = ray(hit->t), w_o = -normalize(ray.direction),
-               n = normalize(hit->normal);
-    color = LightDirect(x, n, w_o, brdf);
-  }
-  return color;
+  return scene_.Trace(
+      ray, [&](const LightEmission& emission) { return emission.L_e; },
+      [&](const RayHit& hit) {
+        const auto brdf = hit.material->GetBRDF(hit);
+        const auto x = ray(hit.t), n = hit.normal, w_o = -ray.direction;
+        return LightDirect(x, n, w_o, brdf);
+      });
 }
 
 glm::vec3 DirectIntegrator::LightDirect(const glm::vec3& x, const glm::vec3& n,
@@ -40,8 +33,9 @@ glm::vec3 DirectIntegrator::LightDirect(const glm::vec3& x, const glm::vec3& n,
       if (w_i_n < 0 || w_i_n_l < 0) {
         continue;
       }
-      if (const auto shadow_hit = scene_.Trace(light_sample.GetShadowRay(x));
-          !shadow_hit || shadow_hit->t > .99f) {
+      if (const auto shadow_hit =
+              scene_.TraceShapes(light_sample.GetShadowRay(x));
+          !shadow_hit || shadow_hit->t > light_sample.distance) {
         const auto G = w_i_n * w_i_n_l / length2(light_sample.light - x);
         radiance_light +=
             light_sample.radience * light_sample.jacobian * brdf(w_i, w_o) * G;

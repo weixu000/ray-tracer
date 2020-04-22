@@ -15,11 +15,9 @@ public:
 
   virtual ~Shape() = default;
 
-  virtual std::optional<LocalInfo> Hit(const Ray &ray) const = 0;
-
   std::optional<RayHit> HitMaterial(const Ray &ray) const {
     if (const auto hit = Hit(ray)) {
-      return RayHit{hit->t, hit->normal, &material, material.GetBRDF(*hit)};
+      return RayHit{hit->t, hit->normal, &material};
     } else {
       return std::nullopt;
     }
@@ -31,5 +29,7 @@ protected:
   AABB aabb_;
 
 private:
+  virtual std::optional<LocalInfo> Hit(const Ray &ray) const = 0;
+
   Material material;
 };

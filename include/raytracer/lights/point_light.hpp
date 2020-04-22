@@ -12,8 +12,9 @@ public:
   LightRay GetRay(const glm::vec3 &x) const override {
     using namespace glm;
     const auto d = position_ - x;
+    const auto dd = length(d);
     // return LightRay{d, intensity_, 1.f};  // for hw1
-    return LightRay{d, intensity_ / length2(d), 1.f};  // physically correct
+    return LightRay{d / dd, intensity_ / (d * d), dd};  // physically correct
   }
 
 private:

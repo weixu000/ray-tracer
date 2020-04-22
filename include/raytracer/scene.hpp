@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -17,9 +18,11 @@ public:
   std::vector<std::unique_ptr<Light>> lights;
   std::vector<std::unique_ptr<DeltaLight>> delta_lights;
 
-  std::optional<RayHit> Trace(const Ray &ray) const { return group.Hit(ray); }
+  std::optional<RayHit> TraceShapes(const Ray &ray) const {
+    return group.Hit(ray);
+  }
 
-  std::optional<LightEmission> TraceLight(const Ray &ray) const {
+  std::optional<LightEmission> TraceLights(const Ray &ray) const {
     std::optional<LightEmission> ret;
     for (const auto &light : lights) {
       if (const auto hit = light->Hit(ray);
@@ -28,5 +31,19 @@ public:
       }
     }
     return ret;
+  }
+
+  template <typename T1, typename T2>
+  glm::vec3 Trace(const Ray &ray, T1 if_light, T2 if_shape,
+                  const glm::vec3 &default_val = glm::vec3(0.f)) const {
+    const auto light_hit = TraceLights(ray);
+    const auto shape_hit = TraceShapes(ray);
+    if (shape_hit && (!light_hit || shape_hit->t < light_hit->distance)) {
+      return if_shape(*shape_hit);
+    } else if (light_hit) {
+      return if_light(*light_hit);
+    } else {
+      return default_val;
+    }
   }
 };

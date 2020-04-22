@@ -16,8 +16,7 @@ QuadLight::QuadLight(const glm::vec3 &radiance, const glm::vec3 &v0,
 LightSample QuadLight::GetSample(const glm::vec3 &x,
                                  const glm::vec2 &uv) const {
   const auto p = v0_ + uv.x * e1_ + uv.y * e2_;
-  const auto d = p - x;
-  return LightSample{p, radiance_, normal_, area_};
+  return LightSample{p, radiance_, normal_, area_, length(p - x)};
 }
 
 std::optional<LightEmission> QuadLight::Hit(const Ray &ray) const {
