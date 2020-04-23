@@ -23,10 +23,9 @@ glm::vec3 DirectIntegrator::LightDirect(const glm::vec3& x, const glm::vec3& n,
 
   auto radiance = vec3(0.f);
   for (const auto& light : scene_.lights) {
-    sampler->Reset();
     auto radiance_light = vec3(0.f);
-    for (int i_sample = 0; i_sample < sampler->count; ++i_sample) {
-      const auto light_sample = light->GetSample(x, sampler->Sample());
+    for (const auto& sample : sampler_->Sample()) {
+      const auto light_sample = light->GetSample(x, sample);
       const auto w_i = normalize(light_sample.light - x);
       const auto n_l = normalize(light_sample.normal);
       const auto w_i_n = dot(w_i, n), w_i_n_l = dot(w_i, n_l);
@@ -41,7 +40,7 @@ glm::vec3 DirectIntegrator::LightDirect(const glm::vec3& x, const glm::vec3& n,
             light_sample.radience * light_sample.jacobian * brdf(w_i, w_o) * G;
       }
     }
-    radiance += radiance_light / float(sampler->count);
+    radiance += radiance_light / float(sampler_->Count());
   }
   return radiance;
 }

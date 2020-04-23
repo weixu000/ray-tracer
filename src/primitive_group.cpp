@@ -4,8 +4,8 @@
 #include <raytracer/primitives/primitive_list.hpp>
 
 PrimitiveGroup::PrimitiveGroup(
-    std::vector<std::unique_ptr<Shape>>::iterator begin,
-    std::vector<std::unique_ptr<Shape>>::iterator end, size_t leaf_size) {
+    std::vector<std::unique_ptr<const Shape>>::iterator begin,
+    std::vector<std::unique_ptr<const Shape>>::iterator end, size_t leaf_size) {
   // Find bounding box
   for (auto it = begin; it != end; ++it) {
     aabb_.Union((*it)->GetAABB());

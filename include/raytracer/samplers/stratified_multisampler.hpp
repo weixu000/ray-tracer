@@ -1,34 +1,35 @@
 #pragma once
 
-#include <random>
-
 #include <raytracer/samplers/multisampler.hpp>
+#include <raytracer/samplers/random.hpp>
 
 class StratifiedMultisampler : public Multisampler {
 public:
   using Multisampler::Multisampler;
 
-  void Reset() const override {
-    size = glm::sqrt(count);
+  void SetCount(int count) override {
+    Multisampler::SetCount(count);
+    size = int(glm::ceil(glm::sqrt(count_)));
     step = 1.f / size;
-    x = y = 0.f;
   }
 
-  glm::vec2 Sample() const override {
-    const auto sample =
-        glm::vec2(x + dist_(gen_) * step, y + dist_(gen_) * step);
-    y += step;
-    if (y >= 1) {
-      x += step;
-      y = 0.f;
+  const std::vector<glm::vec2>& Sample() const override {
+    static thread_local std::vector<glm::vec2> samples;
+    samples.resize(count_);
+
+    auto x = 0.f, y = 0.f;
+    for (auto& s : samples) {
+      s = glm::vec2(x + Random() * step, y + Random() * step);
+      y += step;
+      if (y >= 1) {
+        x += step;
+        y = 0.f;
+      }
     }
-    return sample;
+    return samples;
   }
 
 private:
-  mutable std::default_random_engine gen_{std::random_device()()};
-  mutable std::uniform_real_distribution<float> dist_;
-
-  mutable int size;
-  mutable float x, y, step;
+  int size = 1;
+  float step = 1.f;
 };

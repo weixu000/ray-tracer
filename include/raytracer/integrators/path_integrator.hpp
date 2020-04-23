@@ -1,7 +1,5 @@
 #pragma once
 
-#include <random>
-
 #include <raytracer/integrators/direct_integrator.hpp>
 #include <raytracer/samplers/hemisphere_sampler.hpp>
 #include <raytracer/samplers/square_sampler.hpp>
@@ -59,7 +57,4 @@ private:
 
   HemisphereSampler sphere_sampler_;
   SquareSampler pixel_sampler_;
-
-  mutable std::default_random_engine gen_{std::random_device()()};
-  mutable std::uniform_real_distribution<float> dist_;
 };

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <random>
-
 #include <raytracer/samplers/multisampler.hpp>
 
 template <typename Sampler>
@@ -9,9 +7,15 @@ class IndependentMultisampler : public Multisampler {
 public:
   using Multisampler::Multisampler;
 
-  void Reset() const override {}
+  const std::vector<glm::vec2>& Sample() const override {
+    static thread_local std::vector<glm::vec2> samples;
+    samples.resize(count_);
 
-  glm::vec2 Sample() const override { return sampler_.Sample(); }
+    for (auto& s : samples) {
+      s = sampler_.Sample();
+    }
+    return samples;
+  }
 
 private:
   Sampler sampler_;

@@ -9,7 +9,7 @@ class DirectIntegrator : public Integrator {
 public:
   using Integrator::Integrator;
 
-  std::unique_ptr<const Multisampler> sampler;
+  std::unique_ptr<const Multisampler> sampler_;
 
 protected:
   glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,

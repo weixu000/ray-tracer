@@ -47,7 +47,7 @@ basic_istream<CharT, Traits> &operator>>(basic_istream<CharT, Traits> &is,
 int main(int argc, char **argv) {
   Scene scene;
   vector<mat4> transform_stack;
-  vector<unique_ptr<Shape>> shapes;
+  vector<unique_ptr<const Shape>> shapes;
   vector<vec3> verts;
   Material current_material;
   int width, height;
@@ -200,14 +200,14 @@ int main(int argc, char **argv) {
   }
   scene.group = move(PrimitiveGroup(move(shapes)));
 
-  light_sampler->count = num_light_samples;
+  light_sampler->SetCount(num_light_samples);
 
   if (const auto simple_integrator =
           dynamic_cast<SimpleIntegrator *>(integrator.get())) {
     simple_integrator->max_depth_ = max_depth;
   } else if (const auto direct_integrator =
                  dynamic_cast<DirectIntegrator *>(integrator.get())) {
-    direct_integrator->sampler = move(light_sampler);
+    direct_integrator->sampler_ = move(light_sampler);
     if (const auto path_integrator =
             dynamic_cast<PathIntegrator *>(integrator.get())) {
       path_integrator->max_depth_ = max_depth;
@@ -217,6 +217,5 @@ int main(int argc, char **argv) {
     }
   }
 
-  cout << "Rendering..." << endl;
   integrator->Render().WriteTo(output_file);
 }

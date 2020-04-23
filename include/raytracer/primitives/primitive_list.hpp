@@ -15,11 +15,11 @@ class PrimitiveList : public PrimitiveBase {
 public:
   PrimitiveList() = default;
 
-  explicit PrimitiveList(std::vector<std::unique_ptr<Shape>> primitives)
+  explicit PrimitiveList(std::vector<std::unique_ptr<const Shape>> primitives)
       : PrimitiveList(std::begin(primitives), std::end(primitives)) {}
 
-  PrimitiveList(std::vector<std::unique_ptr<Shape>>::iterator begin,
-                std::vector<std::unique_ptr<Shape>>::iterator end)
+  PrimitiveList(std::vector<std::unique_ptr<const Shape>>::iterator begin,
+                std::vector<std::unique_ptr<const Shape>>::iterator end)
       : primitives_(std::make_move_iterator(begin),
                     std::make_move_iterator(end)) {
     for (const auto &p : primitives_) {
@@ -45,6 +45,6 @@ public:
   }
 
 private:
-  std::vector<std::unique_ptr<Shape>> primitives_;
+  std::vector<std::unique_ptr<const Shape>> primitives_;
   AABB aabb_;
 };

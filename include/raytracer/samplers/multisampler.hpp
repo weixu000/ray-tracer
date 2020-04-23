@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <glm/glm.hpp>
 
 /**
@@ -7,13 +9,14 @@
  */
 class Multisampler {
 public:
-  explicit Multisampler(int count = 1) : count(count) {}
-
   virtual ~Multisampler() = default;
 
-  virtual void Reset() const = 0;
+  virtual const std::vector<glm::vec2>& Sample() const = 0;
 
-  virtual glm::vec2 Sample() const = 0;
+  virtual void SetCount(int count) { count_ = count; }
 
-  int count;
+  int Count() const { return count_; };
+
+protected:
+  int count_ = 1;
 };

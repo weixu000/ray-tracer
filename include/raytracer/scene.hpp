@@ -15,8 +15,8 @@
 class Scene {
 public:
   PrimitiveGroup group;
-  std::vector<std::unique_ptr<Light>> lights;
-  std::vector<std::unique_ptr<DeltaLight>> delta_lights;
+  std::vector<std::unique_ptr<const Light>> lights;
+  std::vector<std::unique_ptr<const DeltaLight>> delta_lights;
 
   std::optional<RayHit> TraceShapes(const Ray &ray) const {
     return group.Hit(ray);

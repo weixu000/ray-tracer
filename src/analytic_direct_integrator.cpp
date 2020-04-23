@@ -15,7 +15,7 @@ glm::vec3 AnalyticDirectIntegrator::ShadePixel(const glm::vec2 &pixel) const {
         const auto incident = ray(hit.t), N = hit.normal;
         auto radiance = glm::vec3(0.f);
         for (const auto &light : scene_.lights) {
-          if (const auto quad = dynamic_cast<QuadLight *>(light.get())) {
+          if (const auto quad = dynamic_cast<const QuadLight *>(light.get())) {
             radiance += mat.diffuse / pi<float>() * quad->GetRadiance() *
                         max(0.f, dot(quad->GetIrradianceVector(incident), N));
           }

@@ -1,7 +1,9 @@
-#include "raytracer/integrators/path_integrator.hpp"
-
+#include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtx/component_wise.hpp>
+
+#include <raytracer/integrators/path_integrator.hpp>
+#include <raytracer/samplers/random.hpp>
 
 glm::vec3 PathIntegrator::Sample(const Ray &ray, int depth) const {
   using namespace glm;
@@ -81,7 +83,7 @@ glm::vec3 PathIntegrator::LightIndirectRR(const glm::vec3 &x,
   using namespace glm;
 
   const auto q = 1 - min(1.f, compMax(throughput));
-  if (dist_(gen_) <= q) {
+  if (Random() <= q) {
     return vec3(0.f);
   }
 
