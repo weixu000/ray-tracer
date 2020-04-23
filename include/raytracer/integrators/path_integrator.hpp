@@ -1,5 +1,7 @@
 #pragma once
 
+#include <random>
+
 #include <raytracer/integrators/direct_integrator.hpp>
 #include <raytracer/samplers/hemisphere_sampler.hpp>
 #include <raytracer/samplers/square_sampler.hpp>
@@ -14,10 +16,17 @@ public:
 
   bool next_event_ = false;
 
+  bool russian_roulette_ = false;
+
 private:
   glm::vec3 ShadePixel(const glm::vec2& pixel) const override {
     if (next_event_) {
-      return ShadePixel(pixel, [&](const Ray& ray) { return SampleNEE(ray); });
+      if (russian_roulette_) {
+        return ShadePixel(pixel, [&](const Ray& ray) { return SampleRR(ray); });
+      } else {
+        return ShadePixel(pixel,
+                          [&](const Ray& ray) { return SampleNEE(ray); });
+      }
     } else {
       return ShadePixel(
           pixel, [&](const Ray& ray) { return Sample(ray, max_depth_); });
@@ -39,10 +48,19 @@ private:
 
   glm::vec3 SampleNEE(const Ray& ray) const;
 
+  glm::vec3 SampleRR(const Ray& ray) const;
+
   glm::vec3 LightIndirect(const glm::vec3& x, const glm::vec3& n,
                           const glm::vec3& w_o, const BRDF& brdf,
                           int depth) const;
 
+  glm::vec3 LightIndirectRR(const glm::vec3& x, const glm::vec3& n,
+                            const glm::vec3& w_o, const BRDF& brdf,
+                            const glm::vec3& throughput) const;
+
   HemisphereSampler sphere_sampler_;
   SquareSampler pixel_sampler_;
+
+  mutable std::default_random_engine gen_{std::random_device()()};
+  mutable std::uniform_real_distribution<float> dist_;
 };

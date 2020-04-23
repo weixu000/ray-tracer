@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
   int num_light_samples = 1, num_pixel_samples = 1;
   string output_file;
   bool nexteventestimation = false;
+  bool russianroulette = false;
 
   if (argc != 2) {
     cerr << "Incorrect command-line options" << endl;
@@ -107,6 +108,12 @@ int main(int argc, char **argv) {
       ss >> op;
       if (op == "on") {
         nexteventestimation = true;
+      }
+    } else if (command == "russianroulette") {
+      string op;
+      ss >> op;
+      if (op == "on") {
+        russianroulette = true;
       }
     } else if (command == "size") {
       ss >> width >> height;
@@ -206,6 +213,7 @@ int main(int argc, char **argv) {
       path_integrator->max_depth_ = max_depth;
       path_integrator->num_sample_ = num_pixel_samples;
       path_integrator->next_event_ = nexteventestimation;
+      path_integrator->russian_roulette_ = russianroulette;
     }
   }
 
