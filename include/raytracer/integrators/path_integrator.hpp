@@ -35,9 +35,8 @@ private:
 
   template <typename T>
   glm::vec3 ShadePixel(const glm::vec2& pixel, T sample) const {
-    auto radiance = sample(
-        camera_.GenerateEyeRay(pixel + .5f));  // first sample is in the center
-    for (int i = 0; i < num_sample_ - 1; ++i) {
+    auto radiance = glm::vec3(0.f);
+    for (int i = 0; i < num_sample_; ++i) {
       radiance +=
           sample(camera_.GenerateEyeRay(pixel + pixel_sampler_.Sample()));
     }
