@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include <raytracer/lights/delta_light.hpp>
 #include <raytracer/lights/light.hpp>
 #include <raytracer/primitives/primitive_group.hpp>
 
@@ -16,7 +15,6 @@ class Scene {
 public:
   PrimitiveGroup group;
   std::vector<std::unique_ptr<const Light>> lights;
-  std::vector<std::unique_ptr<const DeltaLight>> delta_lights;
 
   std::optional<RayHit> TraceShapes(const Ray &ray) const {
     return group.Hit(ray);

@@ -12,9 +12,6 @@
 #include <raytracer/integrators/analytic_direct_integrator.hpp>
 #include <raytracer/integrators/direct_integrator.hpp>
 #include <raytracer/integrators/path_integrator.hpp>
-#include <raytracer/integrators/simple_integrator.hpp>
-#include <raytracer/lights/directional_light.hpp>
-#include <raytracer/lights/point_light.hpp>
 #include <raytracer/lights/quad_light.hpp>
 #include <raytracer/samplers/independent_multisampler.hpp>
 #include <raytracer/samplers/square_sampler.hpp>
@@ -53,8 +50,7 @@ int main(int argc, char **argv) {
   int width, height;
   int max_depth = 5;
   Camera camera;
-  unique_ptr<Integrator> integrator =
-      make_unique<SimpleIntegrator>(scene, camera);
+  unique_ptr<Integrator> integrator;
   unique_ptr<Multisampler> light_sampler =
       make_unique<IndependentMultisampler<SquareSampler>>();
   int num_light_samples = 1, num_pixel_samples = 1;
@@ -85,7 +81,8 @@ int main(int argc, char **argv) {
       string name;
       ss >> name;
       if (name == "raytracer") {
-        integrator = make_unique<SimpleIntegrator>(scene, camera);
+        throw std::runtime_error(
+            "Simple ray tracer removed form implementation.");
       } else if (name == "analyticdirect") {
         integrator = make_unique<AnalyticDirectIntegrator>(scene, camera);
       } else if (name == "direct") {
@@ -169,30 +166,20 @@ int main(int argc, char **argv) {
     } else if (command == "popTransform") {
       transform_stack.pop_back();
     } else if (command == "directional") {
-      vec3 direction, color;
-      ss >> direction >> color;
-      scene.delta_lights.push_back(
-          make_unique<DirectionalLight>(color, direction));
+      throw std::runtime_error(
+          "Directional light removed form implementation.");
     } else if (command == "point") {
-      vec3 position, color;
-      ss >> position >> color;
-      scene.delta_lights.push_back(make_unique<PointLight>(color, position));
+      throw std::runtime_error("Point light removed form implementation.");
     } else if (command == "quadLight") {
       vec3 v0, e1, e2, intensity;
       ss >> v0 >> e1 >> e2 >> intensity;
       scene.lights.push_back(make_unique<QuadLight>(intensity, v0, e1, e2));
-    } else if (command == "attenuation") {
-      // ss >> PointLight::attenuation;
-    } else if (command == "ambient") {
-      ss >> current_material.ambient;
     } else if (command == "diffuse") {
       ss >> current_material.diffuse;
     } else if (command == "specular") {
       ss >> current_material.specular;
     } else if (command == "shininess") {
       ss >> current_material.shininess;
-    } else if (command == "emission") {
-      ss >> current_material.emission;
     } else {
       cerr << "Unknown command in input: " << line << endl;
       return EXIT_FAILURE;
@@ -202,11 +189,8 @@ int main(int argc, char **argv) {
 
   light_sampler->SetCount(num_light_samples);
 
-  if (const auto simple_integrator =
-          dynamic_cast<SimpleIntegrator *>(integrator.get())) {
-    simple_integrator->max_depth_ = max_depth;
-  } else if (const auto direct_integrator =
-                 dynamic_cast<DirectIntegrator *>(integrator.get())) {
+  if (const auto direct_integrator =
+          dynamic_cast<DirectIntegrator *>(integrator.get())) {
     direct_integrator->sampler_ = move(light_sampler);
     if (const auto path_integrator =
             dynamic_cast<PathIntegrator *>(integrator.get())) {
