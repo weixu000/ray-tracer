@@ -1,9 +1,10 @@
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <tuple>
+#include <unordered_map>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -39,36 +40,17 @@ basic_istream<CharT, Traits> &operator>>(basic_istream<CharT, Traits> &is,
   }
   return is;
 }
-}  // namespace
 
-int main(int argc, char **argv) {
+using Options = unordered_map<string, string>;
+
+auto LoadScene(ifstream &fs) {
   Scene scene;
-  vector<mat4> transform_stack;
+  Options others;
   vector<unique_ptr<const Shape>> shapes;
-  vector<vec3> verts;
+  vector<mat4> transform_stack;
   Material current_material;
-  int width, height;
-  int max_depth = 5;
-  Camera camera;
-  unique_ptr<Integrator> integrator;
-  unique_ptr<Multisampler> light_sampler =
-      make_unique<IndependentMultisampler<SquareSampler>>();
-  int num_light_samples = 1, num_pixel_samples = 1;
-  string output_file;
-  bool nexteventestimation = false;
-  bool russianroulette = false;
+  vector<vec3> verts;
 
-  if (argc != 2) {
-    cerr << "Incorrect command-line options" << endl;
-    return EXIT_FAILURE;
-  }
-  string input_path = argv[1];
-  ifstream fs(input_path);
-  if (!fs.is_open()) {
-    cerr << "Cannot open input file: " << input_path << endl;
-    return EXIT_FAILURE;
-  }
-  cout << "Parsing: " << input_path << endl;
   string line;
   while (getline(fs, line)) {
     if (line.empty() || line[0] == '#') {
@@ -77,53 +59,7 @@ int main(int argc, char **argv) {
     istringstream ss(line);
     string command;
     ss >> command;
-    if (command == "integrator") {
-      string name;
-      ss >> name;
-      if (name == "raytracer") {
-        throw std::runtime_error(
-            "Simple ray tracer removed form implementation.");
-      } else if (name == "analyticdirect") {
-        integrator = make_unique<AnalyticDirectIntegrator>(scene, camera);
-      } else if (name == "direct") {
-        integrator = make_unique<DirectIntegrator>(scene, camera);
-      } else if (name == "pathtracer") {
-        integrator = make_unique<PathIntegrator>(scene, camera);
-      }
-    } else if (command == "lightsamples") {
-      ss >> num_light_samples;
-    } else if (command == "lightstratify") {
-      string op;
-      ss >> op;
-      if (op == "on") {
-        light_sampler = make_unique<StratifiedMultisampler>();
-      }
-    } else if (command == "spp") {
-      ss >> num_pixel_samples;
-    } else if (command == "nexteventestimation") {
-      string op;
-      ss >> op;
-      if (op == "on") {
-        nexteventestimation = true;
-      }
-    } else if (command == "russianroulette") {
-      string op;
-      ss >> op;
-      if (op == "on") {
-        russianroulette = true;
-      }
-    } else if (command == "size") {
-      ss >> width >> height;
-    } else if (command == "maxdepth") {
-      ss >> max_depth;
-    } else if (command == "output") {
-      ss >> output_file;
-    } else if (command == "camera") {
-      vec3 look_from, look_at, up;
-      float fov;
-      ss >> look_from >> look_at >> up >> fov;
-      camera = Camera(look_from, look_at, up, fov, width, height);
-    } else if (command == "sphere") {
+    if (command == "sphere") {
       vec3 position;
       float rad;
       ss >> position >> rad;
@@ -181,25 +117,111 @@ int main(int argc, char **argv) {
     } else if (command == "shininess") {
       ss >> current_material.shininess;
     } else {
-      cerr << "Unknown command in input: " << line << endl;
-      return EXIT_FAILURE;
+      string option;
+      getline(ss >> ws, option);
+      others[command] = option;
     }
   }
   scene.group = move(PrimitiveGroup(move(shapes)));
 
-  light_sampler->SetCount(num_light_samples);
+  return make_tuple<Scene, Options>(move(scene), move(others));
+}
 
-  if (const auto direct_integrator =
-          dynamic_cast<DirectIntegrator *>(integrator.get())) {
-    direct_integrator->sampler_ = move(light_sampler);
-    if (const auto path_integrator =
-            dynamic_cast<PathIntegrator *>(integrator.get())) {
-      path_integrator->max_depth_ = max_depth;
-      path_integrator->num_sample_ = num_pixel_samples;
-      path_integrator->next_event_ = nexteventestimation;
-      path_integrator->russian_roulette_ = russianroulette;
+auto LoadCamera(const Options &options) {
+  istringstream ss;
+
+  int width, height;
+  ss.str(options.at("size"));
+  ss >> width >> height;
+  vec3 look_from, look_at, up;
+  float fov;
+  ss.clear();
+  ss.str(options.at("camera"));
+  ss >> look_from >> look_at >> up >> fov;
+  return Camera(look_from, look_at, up, fov, width, height);
+}
+
+unique_ptr<Integrator> LoadIntegrator(const Options &options,
+                                      const Scene &scene,
+                                      const Camera &camera) {
+  if (options.at("integrator") == "raytracer") {
+    throw std::runtime_error("Simple ray tracer removed form implementation.");
+  } else if (options.at("integrator") == "analyticdirect") {
+    return make_unique<AnalyticDirectIntegrator>(scene, camera);
+  } else {
+    unique_ptr<Multisampler> light_sampler;
+    if (options.count("lightstratify") && options.at("lightstratify") == "on") {
+      light_sampler = make_unique<StratifiedMultisampler>();
+    } else {
+      light_sampler = make_unique<IndependentMultisampler<SquareSampler>>();
+    }
+
+    if (options.count("lightsamples")) {
+      int num_light_samples;
+      istringstream ss(options.at("lightsamples"));
+      ss >> num_light_samples;
+      light_sampler->SetCount(num_light_samples);
+    } else {
+      light_sampler->SetCount(1);
+    }
+
+    if (options.at("integrator") == "direct") {
+      auto direct_integrator = make_unique<DirectIntegrator>(scene, camera);
+      direct_integrator->sampler_ = move(light_sampler);
+      return direct_integrator;
+    } else if (options.at("integrator") == "pathtracer") {
+      auto path_integrator = make_unique<PathIntegrator>(scene, camera);
+      path_integrator->sampler_ = move(light_sampler);
+
+      if (options.count("spp")) {
+        istringstream ss(options.at("spp"));
+        ss >> path_integrator->num_sample_;
+      } else {
+        path_integrator->num_sample_ = 1;
+      }
+
+      if (options.count("maxdepth")) {
+        istringstream ss(options.at("maxdepth"));
+        ss >> path_integrator->max_depth_;
+      } else {
+        path_integrator->max_depth_ = 5;
+      }
+
+      path_integrator->next_event_ = options.count("nexteventestimation") &&
+                                     options.at("nexteventestimation") == "on";
+
+      path_integrator->russian_roulette_ =
+          options.count("russianroulette") &&
+          options.at("russianroulette") == "on";
+
+      return path_integrator;
+    } else {
+      throw std::runtime_error("Unknown integrator: " +
+                               options.at("integrator"));
     }
   }
+}
+}  // namespace
+
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    throw std::runtime_error("Incorrect command-line options");
+  }
+  string input_path = argv[1];
+  ifstream fs(input_path);
+  if (!fs.is_open()) {
+    throw std::runtime_error("Cannot open input file: " + input_path);
+  }
+  cout << "Parsing: " << input_path << endl;
+
+  const auto [scene, options] = LoadScene(fs);
+  const auto camera = LoadCamera(options);
+  const auto integrator = LoadIntegrator(options, scene, camera);
+
+  istringstream ss;
+  string output_file;
+  ss.str(options.at("output"));
+  ss >> output_file;
 
   integrator->Render().WriteTo(output_file);
 }
