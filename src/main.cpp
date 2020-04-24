@@ -14,9 +14,6 @@
 #include <raytracer/integrators/direct_integrator.hpp>
 #include <raytracer/integrators/path_integrator.hpp>
 #include <raytracer/lights/quad_light.hpp>
-#include <raytracer/samplers/independent_multisampler.hpp>
-#include <raytracer/samplers/square_sampler.hpp>
-#include <raytracer/samplers/stratified_multisampler.hpp>
 #include <raytracer/shapes/sphere.hpp>
 #include <raytracer/shapes/triangle.hpp>
 
@@ -149,52 +146,60 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
   } else if (options.at("integrator") == "analyticdirect") {
     return make_unique<AnalyticDirectIntegrator>(scene, camera);
   } else {
-    unique_ptr<Multisampler> light_sampler;
-    if (options.count("lightstratify") && options.at("lightstratify") == "on") {
-      light_sampler = make_unique<StratifiedMultisampler>();
-    } else {
-      light_sampler = make_unique<IndependentMultisampler<SquareSampler>>();
-    }
-
+    int num_light_samples = 1;
     if (options.count("lightsamples")) {
-      int num_light_samples;
       istringstream ss(options.at("lightsamples"));
       ss >> num_light_samples;
-      light_sampler->SetCount(num_light_samples);
-    } else {
-      light_sampler->SetCount(1);
     }
+    const auto light_stratify =
+        options.count("lightstratify") && options.at("lightstratify") == "on";
 
     if (options.at("integrator") == "direct") {
-      auto direct_integrator = make_unique<DirectIntegrator>(scene, camera);
-      direct_integrator->sampler_ = move(light_sampler);
-      return direct_integrator;
+      if (light_stratify) {
+        return make_unique<StratifiedDirectIntegrator>(scene, camera,
+                                                       num_light_samples);
+      } else {
+        return make_unique<RandomDirectIntegrator>(scene, camera,
+                                                   num_light_samples);
+      }
     } else if (options.at("integrator") == "pathtracer") {
-      auto path_integrator = make_unique<PathIntegrator>(scene, camera);
-      path_integrator->sampler_ = move(light_sampler);
+      const auto next_event = options.count("nexteventestimation") &&
+                              options.at("nexteventestimation") == "on";
 
+      const auto russian_roulette = options.count("russianroulette") &&
+                                    options.at("russianroulette") == "on";
+
+      int spp = 1;
       if (options.count("spp")) {
         istringstream ss(options.at("spp"));
-        ss >> path_integrator->num_sample_;
-      } else {
-        path_integrator->num_sample_ = 1;
+        ss >> spp;
       }
 
+      int max_depth = 5;
       if (options.count("maxdepth")) {
         istringstream ss(options.at("maxdepth"));
-        ss >> path_integrator->max_depth_;
-      } else {
-        path_integrator->max_depth_ = 5;
+        ss >> max_depth;
       }
 
-      path_integrator->next_event_ = options.count("nexteventestimation") &&
-                                     options.at("nexteventestimation") == "on";
-
-      path_integrator->russian_roulette_ =
-          options.count("russianroulette") &&
-          options.at("russianroulette") == "on";
-
-      return path_integrator;
+      if (!next_event) {
+        return make_unique<PathIntegrator>(scene, camera, spp, max_depth);
+      } else if (light_stratify) {
+        if (russian_roulette) {
+          return make_unique<StratifiedPathIntegrator<true>>(scene, camera, spp,
+                                                             num_light_samples);
+        } else {
+          return make_unique<StratifiedPathIntegrator<false>>(
+              scene, camera, spp, num_light_samples, max_depth);
+        }
+      } else {
+        if (russian_roulette) {
+          return make_unique<RandomPathIntegrator<true>>(scene, camera, spp,
+                                                         num_light_samples);
+        } else {
+          return make_unique<RandomPathIntegrator<false>>(
+              scene, camera, spp, num_light_samples, max_depth);
+        }
+      }
     } else {
       throw std::runtime_error("Unknown integrator: " +
                                options.at("integrator"));

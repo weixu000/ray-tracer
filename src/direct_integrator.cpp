@@ -2,29 +2,20 @@
 
 #include <raytracer/integrators/direct_integrator.hpp>
 
-glm::vec3 DirectIntegrator::ShadePixel(const glm::vec2& pixel) const {
-  using namespace glm;
+template class DirectIntegrator<SquareMultiampler>;
+template class DirectIntegrator<StratifiedMultisampler>;
 
-  const auto ray = camera_.GenerateEyeRay(pixel + .5f);
-
-  return scene_.Trace(
-      ray, [&](const LightEmission& emission) { return emission.L_e; },
-      [&](const RayHit& hit) {
-        const auto brdf = hit.material->GetBRDF(hit);
-        const auto x = ray(hit.t), n = hit.normal, w_o = -ray.direction;
-        return LightDirect(x, n, w_o, brdf);
-      });
-}
-
-glm::vec3 DirectIntegrator::LightDirect(const glm::vec3& x, const glm::vec3& n,
-                                        const glm::vec3& w_o,
-                                        const BRDF& brdf) const {
+template <typename Sampler>
+glm::vec3 DirectIntegrator<Sampler>::LightDirect(const glm::vec3& x,
+                                                 const glm::vec3& n,
+                                                 const glm::vec3& w_o,
+                                                 const BRDF& brdf) const {
   using namespace glm;
 
   auto radiance = vec3(0.f);
   for (const auto& light : scene_.lights) {
     auto radiance_light = vec3(0.f);
-    for (const auto& sample : sampler_->Sample()) {
+    for (const auto& sample : sampler_.Sample()) {
       const auto light_sample = light->GetSample(x, sample);
       const auto w_i = normalize(light_sample.light - x);
       const auto n_l = normalize(light_sample.normal);
@@ -40,7 +31,7 @@ glm::vec3 DirectIntegrator::LightDirect(const glm::vec3& x, const glm::vec3& n,
             light_sample.radience * light_sample.jacobian * brdf(w_i, w_o) * G;
       }
     }
-    radiance += radiance_light / float(sampler_->Count());
+    radiance += radiance_light / float(sampler_.Count());
   }
   return radiance;
 }

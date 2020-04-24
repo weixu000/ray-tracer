@@ -1,11 +1,12 @@
 #pragma once
 
 #include <raytracer/samplers/multisampler.hpp>
+#include <raytracer/samplers/square_sampler.hpp>
 
 template <typename Sampler>
 class IndependentMultisampler : public Multisampler {
 public:
-  using Multisampler::Multisampler;
+  explicit IndependentMultisampler(int count) : Multisampler(count) {}
 
   const std::vector<glm::vec2>& Sample() const override {
     static thread_local std::vector<glm::vec2> samples;
@@ -20,3 +21,5 @@ public:
 private:
   Sampler sampler_;
 };
+
+using SquareMultiampler = IndependentMultisampler<SquareSampler>;

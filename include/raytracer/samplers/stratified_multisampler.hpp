@@ -5,10 +5,7 @@
 
 class StratifiedMultisampler : public Multisampler {
 public:
-  using Multisampler::Multisampler;
-
-  void SetCount(int count) override {
-    Multisampler::SetCount(count);
+  explicit StratifiedMultisampler(int count) : Multisampler(count) {
     size = int(glm::ceil(glm::sqrt(count_)));
     step = 1.f / size;
   }

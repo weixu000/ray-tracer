@@ -9,14 +9,14 @@
  */
 class Multisampler {
 public:
+  Multisampler(int count) : count_(count) {}
+
   virtual ~Multisampler() = default;
 
   virtual const std::vector<glm::vec2>& Sample() const = 0;
 
-  virtual void SetCount(int count) { count_ = count; }
-
   int Count() const { return count_; };
 
 protected:
-  int count_ = 1;
+  int count_;
 };
