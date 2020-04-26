@@ -3,8 +3,8 @@
 
 #include <glm/glm.hpp>
 
+#include <raytracer/aabb.hpp>
 #include <raytracer/material.hpp>
-#include <raytracer/primitives/aabb.hpp>
 #include <raytracer/ray.hpp>
 #include <raytracer/shapes/local_info.hpp>
 #include <raytracer/shapes/ray_hit.hpp>
@@ -23,10 +23,7 @@ public:
     }
   }
 
-  AABB GetAABB() const { return aabb_; }
-
-protected:
-  AABB aabb_;
+  virtual AABB GetAABB() const = 0;
 
 private:
   virtual std::optional<LocalInfo> Hit(const Ray &ray) const = 0;

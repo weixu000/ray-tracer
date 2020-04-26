@@ -1,6 +1,6 @@
 #include <utility>
 
-#include <raytracer/primitives/aabb.hpp>
+#include <raytracer/aabb.hpp>
 
 bool AABB::Hit(const Ray &ray) const {
   using namespace std;

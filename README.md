@@ -15,10 +15,9 @@ URL to image-grader:
     - `stb-cmake` for image output
 
 # Acceleration structure
-In `primitive_group.hpp` and `primitive_group.cpp` I implement Bounding Volume Hierarchy and use it to hold all triangles and spheres in the scene.
-- `PrimitiveGroup::PrimitiveGroup` recursively constructs the binary tree. For each non-leaf node, it sorts centers of bounding boxes along the longest axis and splits in the middle
-- `PrimitiveGroup::Hit` recursively traverses the tree. For each non-leaf node, test if the ray hits the bounding box
-- `PrimitiveList` holds leaf node, which may contain multiple objects and brutal-force loop over them
+In `bvh.hpp` and `bvh.cpp` I implement Bounding Volume Hierarchy and use it to hold all triangles and spheres in the scene.
+- `BVH::BVH` recursively constructs the binary tree. For each non-leaf node, it sorts centers of bounding boxes along the longest axis and splits in the middle
+- `BVH::Hit` recursively traverses the tree. For each non-leaf node, test if the ray hits the bounding box
 
 # Other things
 - The project structure looks like `pbrt` to some extent

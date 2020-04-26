@@ -5,15 +5,15 @@
 #include <string>
 #include <vector>
 
+#include <raytracer/bvh.hpp>
 #include <raytracer/lights/light.hpp>
-#include <raytracer/primitives/primitive_group.hpp>
 
 /**
  * Hold primitives and lights
  */
 class Scene {
 public:
-  PrimitiveGroup group;
+  BVH group;
   std::vector<std::unique_ptr<const Light>> lights;
 
   std::optional<RayHit> TraceShapes(const Ray &ray) const {

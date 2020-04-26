@@ -13,7 +13,6 @@ Triangle::Triangle(const Material &mat, const glm::mat4 &transform,
   e1_ = v1_w - v0_w;
   e2_ = v2_w - v0_w;
   n_ = normalize(cross(e1_, e2_));
-  aabb_ = AABB{min(v0_w, min(v1_w, v2_w)), max(v0_w, max(v1_w, v2_w))};
 }
 
 // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm

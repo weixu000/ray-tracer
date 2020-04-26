@@ -119,7 +119,7 @@ auto LoadScene(ifstream &fs) {
       others[command] = option;
     }
   }
-  scene.group = move(PrimitiveGroup(move(shapes)));
+  scene.group = move(BVH(move(shapes)));
 
   return make_tuple<Scene, Options>(move(scene), move(others));
 }
