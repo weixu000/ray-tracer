@@ -5,11 +5,11 @@
 
 BVH::BVH(std::vector<std::unique_ptr<const Shape>> primitives) {
   Construct(std::begin(primitives), std::end(primitives));
-  std::cout << "Nodes:" << nodes_.size() << ", " << sizeof(Node) << " bytes"
+  std::cout << "Nodes: " << nodes_.size() << ", " << sizeof(Node) << " bytes"
             << std::endl
-            << "Spheres:" << spheres_.size() << ", " << sizeof(Sphere)
+            << "Spheres: " << spheres_.size() << ", " << sizeof(Sphere)
             << " bytes" << std::endl
-            << "Triangles:" << triangles_.size() << ", " << sizeof(Triangle)
+            << "Triangles: " << triangles_.size() << ", " << sizeof(Triangle)
             << " bytes" << std::endl;
 }
 

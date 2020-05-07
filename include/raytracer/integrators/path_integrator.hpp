@@ -4,13 +4,14 @@
 #include <variant>
 
 #include <raytracer/integrators/direct_integrator.hpp>
+#include <raytracer/samplers/cosine_sampler.hpp>
 #include <raytracer/samplers/hemisphere_sampler.hpp>
 #include <raytracer/samplers/independent_multisampler.hpp>
 
-class PathIntegrator : public Integrator {
+class PathIntegratorSimple : public Integrator {
 public:
-  PathIntegrator(const Scene& scene, const Camera& camera, int num_sample,
-                 int max_depth)
+  PathIntegratorSimple(const Scene& scene, const Camera& camera, int num_sample,
+                       int max_depth)
       : Integrator(scene, camera),
         max_depth_(max_depth),
         pixel_sampler_(num_sample) {}
@@ -32,21 +33,20 @@ private:
   SquareMultiampler pixel_sampler_;
 };
 
-template <bool russian_roulette, typename Sampler>
-class PathIntegratorNEE : public DirectIntegrator<Sampler> {
+template <bool russian_roulette, typename LightSampler, typename Sampler>
+class PathIntegrator : public DirectIntegrator<LightSampler> {
 public:
-  using Base = DirectIntegrator<Sampler>;
+  using Base = DirectIntegrator<LightSampler>;
 
-  PathIntegratorNEE(const Scene& scene, const Camera& camera,
-                    int num_pixel_sample, int num_light_sample)
+  PathIntegrator(const Scene& scene, const Camera& camera, int num_pixel_sample,
+                 int num_light_sample)
       : Base(scene, camera, num_light_sample),
         pixel_sampler_(num_pixel_sample) {}
 
   template <bool T = !russian_roulette>
-  PathIntegratorNEE(const Scene& scene, const Camera& camera,
-                    int num_pixel_sample, int num_light_sample,
-                    std::enable_if_t<T, int> max_depth)
-      : PathIntegratorNEE(scene, camera, num_pixel_sample, num_light_sample) {
+  PathIntegrator(const Scene& scene, const Camera& camera, int num_pixel_sample,
+                 int num_light_sample, std::enable_if_t<T, int> max_depth)
+      : PathIntegrator(scene, camera, num_pixel_sample, num_light_sample) {
     max_depth_ = max_depth;
   }
 
@@ -69,18 +69,26 @@ private:
 
   std::conditional_t<russian_roulette, std::monostate, int> max_depth_;
 
-  HemisphereSampler sphere_sampler_;
+  Sampler sphere_sampler_;
   SquareMultiampler pixel_sampler_;
 };
 
-extern template class PathIntegratorNEE<false, SquareMultiampler>;
-extern template class PathIntegratorNEE<false, StratifiedMultisampler>;
-extern template class PathIntegratorNEE<true, SquareMultiampler>;
-extern template class PathIntegratorNEE<true, StratifiedMultisampler>;
+template <typename LightSampler, typename Sampler>
+using PathIntegratorNEE = PathIntegrator<false, LightSampler, Sampler>;
+template <typename LightSampler, typename Sampler>
+using PathIntegratorRR = PathIntegrator<true, LightSampler, Sampler>;
 
-template <bool russian_roulette>
-using RandomPathIntegrator =
-    PathIntegratorNEE<russian_roulette, SquareMultiampler>;
-template <bool russian_roulette>
-using StratifiedPathIntegrator =
-    PathIntegratorNEE<russian_roulette, StratifiedMultisampler>;
+extern template class PathIntegrator<false, SquareMultiampler,
+                                     HemisphereSampler>;
+extern template class PathIntegrator<false, SquareMultiampler, CosineSampler>;
+extern template class PathIntegrator<false, StratifiedMultisampler,
+                                     HemisphereSampler>;
+extern template class PathIntegrator<false, StratifiedMultisampler,
+                                     CosineSampler>;
+extern template class PathIntegrator<true, SquareMultiampler,
+                                     HemisphereSampler>;
+extern template class PathIntegrator<true, SquareMultiampler, CosineSampler>;
+extern template class PathIntegrator<true, StratifiedMultisampler,
+                                     HemisphereSampler>;
+extern template class PathIntegrator<true, StratifiedMultisampler,
+                                     CosineSampler>;

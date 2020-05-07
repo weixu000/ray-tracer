@@ -5,12 +5,16 @@
 #include <raytracer/integrators/path_integrator.hpp>
 #include <raytracer/samplers/random.hpp>
 
-template class PathIntegratorNEE<false, SquareMultiampler>;
-template class PathIntegratorNEE<false, StratifiedMultisampler>;
-template class PathIntegratorNEE<true, SquareMultiampler>;
-template class PathIntegratorNEE<true, StratifiedMultisampler>;
+template class PathIntegrator<false, SquareMultiampler, HemisphereSampler>;
+template class PathIntegrator<false, SquareMultiampler, CosineSampler>;
+template class PathIntegrator<false, StratifiedMultisampler, HemisphereSampler>;
+template class PathIntegrator<false, StratifiedMultisampler, CosineSampler>;
+template class PathIntegrator<true, SquareMultiampler, HemisphereSampler>;
+template class PathIntegrator<true, SquareMultiampler, CosineSampler>;
+template class PathIntegrator<true, StratifiedMultisampler, HemisphereSampler>;
+template class PathIntegrator<true, StratifiedMultisampler, CosineSampler>;
 
-glm::vec3 PathIntegrator::Sample(const Ray &ray, int depth) const {
+glm::vec3 PathIntegratorSimple::Sample(const Ray &ray, int depth) const {
   using namespace glm;
 
   if (depth <= 0) {
@@ -21,16 +25,16 @@ glm::vec3 PathIntegrator::Sample(const Ray &ray, int depth) const {
       ray, [&](const LightEmission &emission) { return emission.L_e; },
       [&](const RayHit &hit) {
         const auto brdf = hit.material->GetBRDF(hit);
-        const auto x = ray(hit.t), n = normalize(hit.normal);
-        const auto w_i = normalize(sphere_sampler_.Sample(n)),
+        const auto x = ray(hit.t), n = normalize(hit.normal),
                    w_o = -normalize(ray.direction);
+        const auto [w_i, pdf] = sphere_sampler_.Sample(n);
         const auto L_r = Sample({x + w_i * SHADOW_EPSILON, w_i}, depth - 1);
-        return 2 * glm::pi<float>() * L_r * brdf(w_i, w_o) * dot(n, w_i);
+        return L_r * brdf(w_i, w_o) * dot(n, w_i) / pdf;
       });
 }
 
-template <bool russian_roulette, typename Sampler>
-glm::vec3 PathIntegratorNEE<russian_roulette, Sampler>::Sample(
+template <bool russian_roulette, typename LightSampler, typename Sampler>
+glm::vec3 PathIntegrator<russian_roulette, LightSampler, Sampler>::Sample(
     const Ray &ray) const {
   using namespace glm;
 
@@ -50,8 +54,9 @@ glm::vec3 PathIntegratorNEE<russian_roulette, Sampler>::Sample(
       });
 }
 
-template <bool russian_roulette, typename Sampler>
-glm::vec3 PathIntegratorNEE<russian_roulette, Sampler>::LightIndirect(
+template <bool russian_roulette, typename LightSampler, typename Sampler>
+glm::vec3
+PathIntegrator<russian_roulette, LightSampler, Sampler>::LightIndirect(
     const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_o,
     const BRDF &brdf,
     std::conditional_t<russian_roulette, const glm::vec3 &, int>
@@ -70,7 +75,7 @@ glm::vec3 PathIntegratorNEE<russian_roulette, Sampler>::LightIndirect(
     }
   }
 
-  const auto w_i = normalize(sphere_sampler_.Sample(n));
+  const auto [w_i, pdf] = sphere_sampler_.Sample(n);
   const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
 
   return Base::scene_.Trace(
@@ -79,16 +84,15 @@ glm::vec3 PathIntegratorNEE<russian_roulette, Sampler>::LightIndirect(
         const auto brdf_i = hit.material->GetBRDF(hit);
         const auto x_i = ray_i(hit.t), n_i = hit.normal;
         if constexpr (russian_roulette) {
-          const auto throughput_RR = 2 * glm::pi<float>() * brdf(w_i, w_o) *
-                                     dot(n, w_i) * throughput_or_depth /
-                                     (1 - q);
+          const auto throughput_RR = brdf(w_i, w_o) * dot(n, w_i) / pdf *
+                                     throughput_or_depth / (1 - q);
           return Base::LightDirect(x_i, n_i, -w_i, brdf_i) * throughput_RR +
                  LightIndirect(x_i, n_i, -w_i, brdf_i, throughput_RR);
         } else {
           const auto L =
               Base::LightDirect(x_i, n_i, -w_i, brdf_i) +
               LightIndirect(x_i, n_i, -w_i, brdf_i, throughput_or_depth - 1);
-          return 2 * glm::pi<float>() * L * brdf(w_i, w_o) * dot(n, w_i);
+          return L * brdf(w_i, w_o) * dot(n, w_i) / pdf;
         }
       });
 }

@@ -168,6 +168,8 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
 
       const auto russian_roulette = options.count("russianroulette") &&
                                     options.at("russianroulette") == "on";
+      const auto cosine_sampling = options.count("importancesampling") &&
+                                   options.at("importancesampling") == "cosine";
 
       int spp = 1;
       if (options.count("spp")) {
@@ -181,24 +183,35 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
         ss >> max_depth;
       }
 
+      unique_ptr<Integrator> integrators[2][2][2] = {
+          {{make_unique<
+                PathIntegratorNEE<SquareMultiampler, HemisphereSampler>>(
+                scene, camera, spp, num_light_samples, max_depth),
+            make_unique<PathIntegratorNEE<SquareMultiampler, CosineSampler>>(
+                scene, camera, spp, num_light_samples, max_depth)},
+           {make_unique<
+                PathIntegratorNEE<StratifiedMultisampler, HemisphereSampler>>(
+                scene, camera, spp, num_light_samples, max_depth),
+            make_unique<
+                PathIntegratorNEE<StratifiedMultisampler, CosineSampler>>(
+                scene, camera, spp, num_light_samples, max_depth)}},
+          {{make_unique<PathIntegratorRR<SquareMultiampler, HemisphereSampler>>(
+                scene, camera, spp, num_light_samples),
+            make_unique<PathIntegratorRR<SquareMultiampler, CosineSampler>>(
+                scene, camera, spp, num_light_samples)},
+           {make_unique<
+                PathIntegratorRR<StratifiedMultisampler, HemisphereSampler>>(
+                scene, camera, spp, num_light_samples),
+            make_unique<
+                PathIntegratorRR<StratifiedMultisampler, CosineSampler>>(
+                scene, camera, spp, num_light_samples)}},
+      };
+
       if (!next_event) {
-        return make_unique<PathIntegrator>(scene, camera, spp, max_depth);
-      } else if (light_stratify) {
-        if (russian_roulette) {
-          return make_unique<StratifiedPathIntegrator<true>>(scene, camera, spp,
-                                                             num_light_samples);
-        } else {
-          return make_unique<StratifiedPathIntegrator<false>>(
-              scene, camera, spp, num_light_samples, max_depth);
-        }
+        return make_unique<PathIntegratorSimple>(scene, camera, spp, max_depth);
       } else {
-        if (russian_roulette) {
-          return make_unique<RandomPathIntegrator<true>>(scene, camera, spp,
-                                                         num_light_samples);
-        } else {
-          return make_unique<RandomPathIntegrator<false>>(
-              scene, camera, spp, num_light_samples, max_depth);
-        }
+        return move(
+            integrators[russian_roulette][light_stratify][cosine_sampling]);
       }
     } else {
       throw std::runtime_error("Unknown integrator: " +
