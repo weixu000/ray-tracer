@@ -1,4 +1,4 @@
-#include <raytracer/camera.hpp>
+#include "camera.hpp"
 
 using namespace glm;
 

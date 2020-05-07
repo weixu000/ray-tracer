@@ -1,6 +1,6 @@
-#include <stb_image_write.h>
+#include "image.hpp"
 
-#include <raytracer/image.hpp>
+#include <stb_image_write.h>
 
 void Image::WriteTo(const std::string &file_path) const {
   auto ext = file_path.substr(file_path.size() - 4);

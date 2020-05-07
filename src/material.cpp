@@ -1,6 +1,6 @@
-#include <glm/gtc/constants.hpp>
+#include "material.hpp"
 
-#include <raytracer/material.hpp>
+#include <glm/gtc/constants.hpp>
 
 glm::vec3 BRDF::operator()(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
   using namespace glm;

@@ -1,7 +1,7 @@
+#include "bvh.hpp"
+
 #include <algorithm>
 #include <iostream>
-
-#include <raytracer/bvh.hpp>
 
 BVH::BVH(std::vector<std::unique_ptr<const Shape>> primitives) {
   Construct(std::begin(primitives), std::end(primitives));

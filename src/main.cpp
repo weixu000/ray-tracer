@@ -1,4 +1,6 @@
 #include <fstream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -7,15 +9,16 @@
 #include <unordered_map>
 #include <vector>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include <raytracer/integrators/analytic_direct_integrator.hpp>
-#include <raytracer/integrators/direct_integrator.hpp>
-#include <raytracer/integrators/path_integrator.hpp>
-#include <raytracer/lights/quad_light.hpp>
-#include <raytracer/shapes/sphere.hpp>
-#include <raytracer/shapes/triangle.hpp>
+#include "integrators/analytic_direct_integrator.hpp"
+#include "integrators/direct_integrator.hpp"
+#include "integrators/path_integrator.hpp"
+#include "lights/quad_light.hpp"
+#include "samplers/cosine_sampler.hpp"
+#include "samplers/hemisphere_sampler.hpp"
+#include "samplers/independent_multisampler.hpp"
+#include "samplers/stratified_multisampler.hpp"
+#include "shapes/sphere.hpp"
+#include "shapes/triangle.hpp"
 
 using namespace std;
 using namespace glm;
@@ -156,11 +159,11 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
 
     if (options.at("integrator") == "direct") {
       if (light_stratify) {
-        return make_unique<StratifiedDirectIntegrator>(scene, camera,
-                                                       num_light_samples);
+        return make_unique<DirectIntegrator<StratifiedMultisampler>>(
+            scene, camera, num_light_samples);
       } else {
-        return make_unique<RandomDirectIntegrator>(scene, camera,
-                                                   num_light_samples);
+        return make_unique<DirectIntegrator<SquareMultiampler>>(
+            scene, camera, num_light_samples);
       }
     } else if (options.at("integrator") == "pathtracer") {
       const auto next_event = options.count("nexteventestimation") &&
@@ -183,33 +186,40 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
         ss >> max_depth;
       }
 
-      unique_ptr<Integrator> integrators[2][2][2] = {
-          {{make_unique<
-                PathIntegratorNEE<SquareMultiampler, HemisphereSampler>>(
-                scene, camera, spp, num_light_samples, max_depth),
-            make_unique<PathIntegratorNEE<SquareMultiampler, CosineSampler>>(
-                scene, camera, spp, num_light_samples, max_depth)},
-           {make_unique<
-                PathIntegratorNEE<StratifiedMultisampler, HemisphereSampler>>(
-                scene, camera, spp, num_light_samples, max_depth),
-            make_unique<
-                PathIntegratorNEE<StratifiedMultisampler, CosineSampler>>(
-                scene, camera, spp, num_light_samples, max_depth)}},
-          {{make_unique<PathIntegratorRR<SquareMultiampler, HemisphereSampler>>(
-                scene, camera, spp, num_light_samples),
-            make_unique<PathIntegratorRR<SquareMultiampler, CosineSampler>>(
-                scene, camera, spp, num_light_samples)},
-           {make_unique<
-                PathIntegratorRR<StratifiedMultisampler, HemisphereSampler>>(
-                scene, camera, spp, num_light_samples),
-            make_unique<
-                PathIntegratorRR<StratifiedMultisampler, CosineSampler>>(
-                scene, camera, spp, num_light_samples)}},
-      };
-
       if (!next_event) {
-        return make_unique<PathIntegratorSimple>(scene, camera, spp, max_depth);
+        if (cosine_sampling) {
+          return make_unique<PathIntegratorSimple<CosineSampler>>(
+              scene, camera, spp, max_depth);
+
+        } else {
+          return make_unique<PathIntegratorSimple<HemisphereSampler>>(
+              scene, camera, spp, max_depth);
+        }
       } else {
+        unique_ptr<Integrator> integrators[2][2][2] = {
+            {{make_unique<
+                  PathIntegratorNEE<SquareMultiampler, HemisphereSampler>>(
+                  scene, camera, spp, num_light_samples, max_depth),
+              make_unique<PathIntegratorNEE<SquareMultiampler, CosineSampler>>(
+                  scene, camera, spp, num_light_samples, max_depth)},
+             {make_unique<
+                  PathIntegratorNEE<StratifiedMultisampler, HemisphereSampler>>(
+                  scene, camera, spp, num_light_samples, max_depth),
+              make_unique<
+                  PathIntegratorNEE<StratifiedMultisampler, CosineSampler>>(
+                  scene, camera, spp, num_light_samples, max_depth)}},
+            {{make_unique<
+                  PathIntegratorRR<SquareMultiampler, HemisphereSampler>>(
+                  scene, camera, spp, num_light_samples),
+              make_unique<PathIntegratorRR<SquareMultiampler, CosineSampler>>(
+                  scene, camera, spp, num_light_samples)},
+             {make_unique<
+                  PathIntegratorRR<StratifiedMultisampler, HemisphereSampler>>(
+                  scene, camera, spp, num_light_samples),
+              make_unique<
+                  PathIntegratorRR<StratifiedMultisampler, CosineSampler>>(
+                  scene, camera, spp, num_light_samples)}},
+        };
         return move(
             integrators[russian_roulette][light_stratify][cosine_sampling]);
       }
