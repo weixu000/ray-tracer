@@ -73,8 +73,8 @@ class PathIntegrator : public DirectIntegrator<LightSampler> {
 };
 
 template <typename LightSampler, typename Sampler>
-using PathIntegratorNEE = PathIntegrator<false, LightSampler, Sampler>;
+using IntegratorNEE = PathIntegrator<false, LightSampler, Sampler>;
 template <typename LightSampler, typename Sampler>
-using PathIntegratorRR = PathIntegrator<true, LightSampler, Sampler>;
+using IntegratorRR = PathIntegrator<true, LightSampler, Sampler>;
 
 #include "path_integrator.inc"

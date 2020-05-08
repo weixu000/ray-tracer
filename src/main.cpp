@@ -13,6 +13,7 @@
 #include "integrators/direct_integrator.hpp"
 #include "integrators/path_integrator.hpp"
 #include "lights/quad_light.hpp"
+#include "registry_factory.hpp"
 #include "samplers/cosine_sampler.hpp"
 #include "samplers/hemisphere_sampler.hpp"
 #include "samplers/independent_multisampler.hpp"
@@ -142,6 +143,41 @@ auto LoadCamera(const Options &options) {
   return Camera(look_from, look_at, up, fov, width, height);
 }
 
+enum class Sampling { Hemisphere, Cosine, BRDF };
+
+template <bool light_stratify, Sampling sampling, typename T>
+using Entry = RegistryFactory<Integrator, bool, Sampling>::Entry<light_stratify,
+                                                                 sampling, T>;
+template <typename... Ts>
+using Registry = RegistryFactory<Integrator, bool, Sampling>::Registry<Ts...>;
+
+using RegistryNEE =
+    Registry<Entry<false, Sampling::Hemisphere,
+                   IntegratorNEE<SquareMultiampler, HemisphereSampler>>,
+             Entry<false, Sampling::Cosine,
+                   IntegratorNEE<SquareMultiampler, CosineSampler>>,
+             Entry<false, Sampling::BRDF,
+                   IntegratorNEE<SquareMultiampler, PhongSampler>>,
+             Entry<true, Sampling::Hemisphere,
+                   IntegratorNEE<StratifiedMultisampler, HemisphereSampler>>,
+             Entry<true, Sampling::Cosine,
+                   IntegratorNEE<StratifiedMultisampler, CosineSampler>>,
+             Entry<true, Sampling::BRDF,
+                   IntegratorNEE<StratifiedMultisampler, PhongSampler>>>;
+
+using RegistryRR = Registry<
+    Entry<false, Sampling::Hemisphere,
+          IntegratorRR<SquareMultiampler, HemisphereSampler>>,
+    Entry<false, Sampling::Cosine,
+          IntegratorRR<SquareMultiampler, CosineSampler>>,
+    Entry<false, Sampling::BRDF, IntegratorRR<SquareMultiampler, PhongSampler>>,
+    Entry<true, Sampling::Hemisphere,
+          IntegratorRR<StratifiedMultisampler, HemisphereSampler>>,
+    Entry<true, Sampling::Cosine,
+          IntegratorRR<StratifiedMultisampler, CosineSampler>>,
+    Entry<true, Sampling::BRDF,
+          IntegratorRR<StratifiedMultisampler, PhongSampler>>>;
+
 unique_ptr<Integrator> LoadIntegrator(const Options &options,
                                       const Scene &scene,
                                       const Camera &camera) {
@@ -172,13 +208,13 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
 
       const auto russian_roulette = options.count("russianroulette") &&
                                     options.at("russianroulette") == "on";
-      auto importance_sampling = 0;
+      Sampling importance_sampling = Sampling::Hemisphere;
       if (options.count("importancesampling")) {
         const auto method = options.at("importancesampling");
         if (method == "cosine") {
-          importance_sampling = 1;
+          importance_sampling = Sampling::Cosine;
         } else if (method == "brdf") {
-          importance_sampling = 2;
+          importance_sampling = Sampling::BRDF;
         }
       }
 
@@ -195,37 +231,23 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
       }
 
       if (!next_event) {
-        if (importance_sampling) {
-          return make_unique<PathIntegratorSimple<CosineSampler>>(
-              scene, camera, spp, max_depth);
-
-        } else {
-          return make_unique<PathIntegratorSimple<HemisphereSampler>>(
-              scene, camera, spp, max_depth);
+        switch (importance_sampling) {
+          case Sampling::Hemisphere:
+            return make_unique<PathIntegratorSimple<HemisphereSampler>>(
+                scene, camera, spp, max_depth);
+          case Sampling::Cosine:
+            return make_unique<PathIntegratorSimple<CosineSampler>>(
+                scene, camera, spp, max_depth);
+          case Sampling::BRDF:
+            return make_unique<PathIntegratorSimple<PhongSampler>>(
+                scene, camera, spp, max_depth);
         }
+      } else if (russian_roulette) {
+        return RegistryRR::Get(light_stratify, importance_sampling, scene,
+                               camera, spp, num_light_samples);
       } else {
-#define NEE(T1, T2)                                           \
-  (make_unique<PathIntegratorNEE<T1, T2>>(scene, camera, spp, \
-                                          num_light_samples, max_depth))
-#define RR(T1, T2) \
-  (make_unique<PathIntegratorRR<T1, T2>>(scene, camera, spp, num_light_samples))
-        unique_ptr<Integrator> integrators[2][2][3] = {
-            NEE(SquareMultiampler, HemisphereSampler),
-            NEE(SquareMultiampler, CosineSampler),
-            NEE(SquareMultiampler, PhongSampler),
-            NEE(StratifiedMultisampler, HemisphereSampler),
-            NEE(StratifiedMultisampler, CosineSampler),
-            NEE(StratifiedMultisampler, PhongSampler),
-            RR(SquareMultiampler, HemisphereSampler),
-            RR(SquareMultiampler, CosineSampler),
-            RR(SquareMultiampler, PhongSampler),
-            RR(StratifiedMultisampler, HemisphereSampler),
-            RR(StratifiedMultisampler, CosineSampler),
-            RR(StratifiedMultisampler, PhongSampler)};
-#undef NEE
-#undef RR
-        return move(
-            integrators[russian_roulette][light_stratify][importance_sampling]);
+        return RegistryNEE::Get(light_stratify, importance_sampling, scene,
+                                camera, spp, num_light_samples, max_depth);
       }
     } else {
       throw std::runtime_error("Unknown integrator: " +
