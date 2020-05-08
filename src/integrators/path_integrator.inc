@@ -19,9 +19,10 @@ glm::vec3 PathIntegratorSimple<Sampler>::Sample(const Ray &ray,
         const auto brdf = hit.material->GetBRDF(hit);
         const auto x = ray(hit.t), n = normalize(hit.normal),
                    w_o = -normalize(ray.direction);
-        const auto [w_i, pdf] = sphere_sampler_.Sample(n);
+        const auto [w_i, pdf] = sphere_sampler_.Sample(brdf, w_o);
+        if (dot(w_i, n) <= 0 || pdf == 0) return vec3{0.f};
         const auto L_r = Sample({x + w_i * SHADOW_EPSILON, w_i}, depth - 1);
-        return L_r * brdf(w_i, w_o) * dot(n, w_i) / pdf;
+        return L_r * brdf(w_i, w_o) * max(0.f, dot(n, w_i)) / pdf;
       });
 }
 
@@ -67,7 +68,8 @@ PathIntegrator<russian_roulette, LightSampler, Sampler>::LightIndirect(
     }
   }
 
-  const auto [w_i, pdf] = sphere_sampler_.Sample(n);
+  const auto [w_i, pdf] = sphere_sampler_.Sample(brdf, w_o);
+  if (dot(w_i, n) <= 0 || pdf == 0) return vec3{0.f};
   const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
 
   return Base::scene_.Trace(
@@ -76,15 +78,15 @@ PathIntegrator<russian_roulette, LightSampler, Sampler>::LightIndirect(
         const auto brdf_i = hit.material->GetBRDF(hit);
         const auto x_i = ray_i(hit.t), n_i = hit.normal;
         if constexpr (russian_roulette) {
-          const auto throughput_RR = brdf(w_i, w_o) * dot(n, w_i) / pdf *
-                                     throughput_or_depth / (1 - q);
+          const auto throughput_RR = brdf(w_i, w_o) * max(0.f, dot(n, w_i)) /
+                                     pdf * throughput_or_depth / (1 - q);
           return Base::LightDirect(x_i, n_i, -w_i, brdf_i) * throughput_RR +
                  LightIndirect(x_i, n_i, -w_i, brdf_i, throughput_RR);
         } else {
           const auto L =
               Base::LightDirect(x_i, n_i, -w_i, brdf_i) +
               LightIndirect(x_i, n_i, -w_i, brdf_i, throughput_or_depth - 1);
-          return L * brdf(w_i, w_o) * dot(n, w_i) / pdf;
+          return L * brdf(w_i, w_o) * max(0.f, dot(n, w_i)) / pdf;
         }
       });
 }

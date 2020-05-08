@@ -16,6 +16,7 @@
 #include "samplers/cosine_sampler.hpp"
 #include "samplers/hemisphere_sampler.hpp"
 #include "samplers/independent_multisampler.hpp"
+#include "samplers/phong_sampler.hpp"
 #include "samplers/stratified_multisampler.hpp"
 #include "shapes/sphere.hpp"
 #include "shapes/triangle.hpp"
@@ -171,8 +172,15 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
 
       const auto russian_roulette = options.count("russianroulette") &&
                                     options.at("russianroulette") == "on";
-      const auto cosine_sampling = options.count("importancesampling") &&
-                                   options.at("importancesampling") == "cosine";
+      auto importance_sampling = 0;
+      if (options.count("importancesampling")) {
+        const auto method = options.at("importancesampling");
+        if (method == "cosine") {
+          importance_sampling = 1;
+        } else if (method == "brdf") {
+          importance_sampling = 2;
+        }
+      }
 
       int spp = 1;
       if (options.count("spp")) {
@@ -187,7 +195,7 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
       }
 
       if (!next_event) {
-        if (cosine_sampling) {
+        if (importance_sampling) {
           return make_unique<PathIntegratorSimple<CosineSampler>>(
               scene, camera, spp, max_depth);
 
@@ -196,32 +204,28 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
               scene, camera, spp, max_depth);
         }
       } else {
-        unique_ptr<Integrator> integrators[2][2][2] = {
-            {{make_unique<
-                  PathIntegratorNEE<SquareMultiampler, HemisphereSampler>>(
-                  scene, camera, spp, num_light_samples, max_depth),
-              make_unique<PathIntegratorNEE<SquareMultiampler, CosineSampler>>(
-                  scene, camera, spp, num_light_samples, max_depth)},
-             {make_unique<
-                  PathIntegratorNEE<StratifiedMultisampler, HemisphereSampler>>(
-                  scene, camera, spp, num_light_samples, max_depth),
-              make_unique<
-                  PathIntegratorNEE<StratifiedMultisampler, CosineSampler>>(
-                  scene, camera, spp, num_light_samples, max_depth)}},
-            {{make_unique<
-                  PathIntegratorRR<SquareMultiampler, HemisphereSampler>>(
-                  scene, camera, spp, num_light_samples),
-              make_unique<PathIntegratorRR<SquareMultiampler, CosineSampler>>(
-                  scene, camera, spp, num_light_samples)},
-             {make_unique<
-                  PathIntegratorRR<StratifiedMultisampler, HemisphereSampler>>(
-                  scene, camera, spp, num_light_samples),
-              make_unique<
-                  PathIntegratorRR<StratifiedMultisampler, CosineSampler>>(
-                  scene, camera, spp, num_light_samples)}},
-        };
+#define NEE(T1, T2)                                           \
+  (make_unique<PathIntegratorNEE<T1, T2>>(scene, camera, spp, \
+                                          num_light_samples, max_depth))
+#define RR(T1, T2) \
+  (make_unique<PathIntegratorRR<T1, T2>>(scene, camera, spp, num_light_samples))
+        unique_ptr<Integrator> integrators[2][2][3] = {
+            NEE(SquareMultiampler, HemisphereSampler),
+            NEE(SquareMultiampler, CosineSampler),
+            NEE(SquareMultiampler, PhongSampler),
+            NEE(StratifiedMultisampler, HemisphereSampler),
+            NEE(StratifiedMultisampler, CosineSampler),
+            NEE(StratifiedMultisampler, PhongSampler),
+            RR(SquareMultiampler, HemisphereSampler),
+            RR(SquareMultiampler, CosineSampler),
+            RR(SquareMultiampler, PhongSampler),
+            RR(StratifiedMultisampler, HemisphereSampler),
+            RR(StratifiedMultisampler, CosineSampler),
+            RR(StratifiedMultisampler, PhongSampler)};
+#undef NEE
+#undef RR
         return move(
-            integrators[russian_roulette][light_stratify][cosine_sampling]);
+            integrators[russian_roulette][light_stratify][importance_sampling]);
       }
     } else {
       throw std::runtime_error("Unknown integrator: " +
