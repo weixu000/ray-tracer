@@ -85,13 +85,13 @@ std::optional<RayHit> BVH::Hit(size_t i, const Ray &ray) const {
             return std::nullopt;
           }
           switch (node.type) {
-          case 0:
-            return spheres_[node.id].HitMaterial(ray);
-          case 1:
-            return triangles_[node.id].HitMaterial(ray);
-          default:
-            assert(false && "Unknown primitive type");
-            throw;
+            case 0:
+              return spheres_[node.id].HitMaterial(ray);
+            case 1:
+              return triangles_[node.id].HitMaterial(ray);
+            default:
+              assert(false && "Unknown primitive type");
+              throw;
           }
         }
       },

@@ -9,15 +9,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "integrators/analytic_direct_integrator.hpp"
 #include "integrators/direct_integrator.hpp"
 #include "integrators/path_integrator.hpp"
 #include "lights/quad_light.hpp"
 #include "registry_factory.hpp"
-#include "samplers/cosine_sampler.hpp"
-#include "samplers/hemisphere_sampler.hpp"
 #include "samplers/independent_multisampler.hpp"
-#include "samplers/phong_sampler.hpp"
 #include "samplers/stratified_multisampler.hpp"
 #include "shapes/sphere.hpp"
 #include "shapes/triangle.hpp"
@@ -50,7 +46,7 @@ auto LoadScene(ifstream &fs) {
   Options others;
   vector<unique_ptr<const Shape>> shapes;
   vector<mat4> transform_stack;
-  Material current_material;
+  Phong current_material;
   vector<vec3> verts;
 
   string line;
@@ -65,8 +61,9 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      shapes.emplace_back(make_unique<Sphere>(
-          current_material, StackMatrices(transform_stack), position, rad));
+      shapes.emplace_back(
+          make_unique<Sphere>(position, rad, StackMatrices(transform_stack),
+                              MaterialRef{0, scene.phong.size() - 1}));
     } else if (command == "maxverts") {
       continue;  // Not used
     } else if (command == "vertex") {
@@ -77,8 +74,8 @@ auto LoadScene(ifstream &fs) {
       ivec3 t;
       ss >> t;
       shapes.emplace_back(make_unique<Triangle>(
-          current_material, StackMatrices(transform_stack), verts[t[0]],
-          verts[t[1]], verts[t[2]]));
+          StackMatrices(transform_stack), verts[t[0]], verts[t[1]], verts[t[2]],
+          MaterialRef{0, scene.phong.size() - 1}));
     } else if (command == "maxvertnorms") {
       continue;  // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {
@@ -113,11 +110,14 @@ auto LoadScene(ifstream &fs) {
       ss >> v0 >> e1 >> e2 >> intensity;
       scene.lights.push_back(make_unique<QuadLight>(intensity, v0, e1, e2));
     } else if (command == "diffuse") {
-      ss >> current_material.diffuse;
+      ss >> current_material.k_d;
+      scene.phong.push_back(current_material);
     } else if (command == "specular") {
-      ss >> current_material.specular;
+      ss >> current_material.k_s;
+      scene.phong.push_back(current_material);
     } else if (command == "shininess") {
-      ss >> current_material.shininess;
+      ss >> current_material.s;
+      scene.phong.push_back(current_material);
     } else {
       string option;
       getline(ss >> ws, option);
@@ -143,8 +143,6 @@ auto LoadCamera(const Options &options) {
   return Camera(look_from, look_at, up, fov, width, height);
 }
 
-enum class Sampling { Hemisphere, Cosine, BRDF };
-
 template <bool light_stratify, Sampling sampling, typename T>
 using Entry = RegistryFactory<Integrator, bool, Sampling>::Entry<light_stratify,
                                                                  sampling, T>;
@@ -153,30 +151,31 @@ using Registry = RegistryFactory<Integrator, bool, Sampling>::Registry<Ts...>;
 
 using RegistryNEE =
     Registry<Entry<false, Sampling::Hemisphere,
-                   IntegratorNEE<SquareMultiampler, HemisphereSampler>>,
+                   IntegratorNEE<SquareMultiampler, Sampling::Hemisphere>>,
              Entry<false, Sampling::Cosine,
-                   IntegratorNEE<SquareMultiampler, CosineSampler>>,
+                   IntegratorNEE<SquareMultiampler, Sampling::Cosine>>,
              Entry<false, Sampling::BRDF,
-                   IntegratorNEE<SquareMultiampler, PhongSampler>>,
+                   IntegratorNEE<SquareMultiampler, Sampling::BRDF>>,
              Entry<true, Sampling::Hemisphere,
-                   IntegratorNEE<StratifiedMultisampler, HemisphereSampler>>,
+                   IntegratorNEE<StratifiedMultisampler, Sampling::Hemisphere>>,
              Entry<true, Sampling::Cosine,
-                   IntegratorNEE<StratifiedMultisampler, CosineSampler>>,
+                   IntegratorNEE<StratifiedMultisampler, Sampling::Cosine>>,
              Entry<true, Sampling::BRDF,
-                   IntegratorNEE<StratifiedMultisampler, PhongSampler>>>;
+                   IntegratorNEE<StratifiedMultisampler, Sampling::BRDF>>>;
 
-using RegistryRR = Registry<
-    Entry<false, Sampling::Hemisphere,
-          IntegratorRR<SquareMultiampler, HemisphereSampler>>,
-    Entry<false, Sampling::Cosine,
-          IntegratorRR<SquareMultiampler, CosineSampler>>,
-    Entry<false, Sampling::BRDF, IntegratorRR<SquareMultiampler, PhongSampler>>,
-    Entry<true, Sampling::Hemisphere,
-          IntegratorRR<StratifiedMultisampler, HemisphereSampler>>,
-    Entry<true, Sampling::Cosine,
-          IntegratorRR<StratifiedMultisampler, CosineSampler>>,
-    Entry<true, Sampling::BRDF,
-          IntegratorRR<StratifiedMultisampler, PhongSampler>>>;
+using RegistryRR =
+    Registry<Entry<false, Sampling::Hemisphere,
+                   IntegratorRR<SquareMultiampler, Sampling::Hemisphere>>,
+             Entry<false, Sampling::Cosine,
+                   IntegratorRR<SquareMultiampler, Sampling::Cosine>>,
+             Entry<false, Sampling::BRDF,
+                   IntegratorRR<SquareMultiampler, Sampling::BRDF>>,
+             Entry<true, Sampling::Hemisphere,
+                   IntegratorRR<StratifiedMultisampler, Sampling::Hemisphere>>,
+             Entry<true, Sampling::Cosine,
+                   IntegratorRR<StratifiedMultisampler, Sampling::Cosine>>,
+             Entry<true, Sampling::BRDF,
+                   IntegratorRR<StratifiedMultisampler, Sampling::BRDF>>>;
 
 unique_ptr<Integrator> LoadIntegrator(const Options &options,
                                       const Scene &scene,
@@ -184,7 +183,8 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
   if (options.at("integrator") == "raytracer") {
     throw std::runtime_error("Simple ray tracer removed form implementation.");
   } else if (options.at("integrator") == "analyticdirect") {
-    return make_unique<AnalyticDirectIntegrator>(scene, camera);
+    throw std::runtime_error(
+        "Analytic direct integrator removed form implementation.");
   } else {
     int num_light_samples = 1;
     if (options.count("lightsamples")) {
@@ -197,10 +197,10 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
     if (options.at("integrator") == "direct") {
       if (light_stratify) {
         return make_unique<DirectIntegrator<StratifiedMultisampler>>(
-            scene, camera, num_light_samples);
+            num_light_samples, scene, camera);
       } else {
         return make_unique<DirectIntegrator<SquareMultiampler>>(
-            scene, camera, num_light_samples);
+            num_light_samples, scene, camera);
       }
     } else if (options.at("integrator") == "pathtracer") {
       const auto next_event = options.count("nexteventestimation") &&
@@ -233,21 +233,21 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
       if (!next_event) {
         switch (importance_sampling) {
           case Sampling::Hemisphere:
-            return make_unique<PathIntegratorSimple<HemisphereSampler>>(
-                scene, camera, spp, max_depth);
+            return make_unique<PathIntegratorSimple<Sampling::Hemisphere>>(
+                spp, max_depth, scene, camera);
           case Sampling::Cosine:
-            return make_unique<PathIntegratorSimple<CosineSampler>>(
-                scene, camera, spp, max_depth);
+            return make_unique<PathIntegratorSimple<Sampling::Cosine>>(
+                spp, max_depth, scene, camera);
           case Sampling::BRDF:
-            return make_unique<PathIntegratorSimple<PhongSampler>>(
-                scene, camera, spp, max_depth);
+            return make_unique<PathIntegratorSimple<Sampling::BRDF>>(
+                spp, max_depth, scene, camera);
         }
       } else if (russian_roulette) {
-        return RegistryRR::Get(light_stratify, importance_sampling, scene,
-                               camera, spp, num_light_samples);
+        return RegistryRR::Get(light_stratify, importance_sampling, spp,
+                               num_light_samples, scene, camera);
       } else {
-        return RegistryNEE::Get(light_stratify, importance_sampling, scene,
-                                camera, spp, num_light_samples, max_depth);
+        return RegistryNEE::Get(light_stratify, importance_sampling, max_depth,
+                                spp, num_light_samples, scene, camera);
       }
     } else {
       throw std::runtime_error("Unknown integrator: " +

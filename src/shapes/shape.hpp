@@ -3,20 +3,20 @@
 #include <optional>
 
 #include "../aabb.hpp"
-#include "../material.hpp"
+#include "../materials/material_ref.hpp"
 #include "../ray.hpp"
 #include "local_info.hpp"
 #include "ray_hit.hpp"
 
 class Shape {
  public:
-  explicit Shape(const Material &mat) : material(mat) {}
+  explicit Shape(const MaterialRef &mat) : material(mat) {}
 
   virtual ~Shape() = default;
 
   std::optional<RayHit> HitMaterial(const Ray &ray) const {
     if (const auto hit = Hit(ray)) {
-      return RayHit{hit->t, hit->normal, &material};
+      return RayHit{hit->t, hit->n, material};
     } else {
       return std::nullopt;
     }
@@ -24,8 +24,8 @@ class Shape {
 
   virtual AABB GetAABB() const = 0;
 
-private:
+ private:
   virtual std::optional<LocalInfo> Hit(const Ray &ray) const = 0;
 
-  Material material;
+  MaterialRef material;
 };

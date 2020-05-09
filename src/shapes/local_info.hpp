@@ -7,5 +7,5 @@
  */
 struct LocalInfo {
   float t;
-  glm::vec3 normal;
+  glm::vec3 n;
 };

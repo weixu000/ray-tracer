@@ -1,10 +1,9 @@
 #include <glm/gtx/norm.hpp>
 
 template <typename Sampler>
-glm::vec3 DirectIntegrator<Sampler>::LightDirect(const glm::vec3& x,
-                                                 const glm::vec3& n,
-                                                 const glm::vec3& w_o,
-                                                 const BRDF& brdf) const {
+glm::vec3 DirectIntegrator<Sampler>::LightDirect(
+    const glm::vec3& x, const glm::vec3& n, const glm::vec3& w_o,
+    const MaterialRef& material) const {
   using namespace glm;
 
   auto radiance = vec3(0.f);
@@ -22,8 +21,8 @@ glm::vec3 DirectIntegrator<Sampler>::LightDirect(const glm::vec3& x,
               scene_.TraceShapes(light_sample.GetShadowRay(x));
           !shadow_hit || shadow_hit->t > light_sample.distance) {
         const auto G = w_i_n * w_i_n_l / length2(light_sample.light - x);
-        radiance_light +=
-            light_sample.radience * light_sample.jacobian * brdf(w_i, w_o) * G;
+        radiance_light += light_sample.radience * light_sample.jacobian *
+                          scene_.Brdf(material, n, w_i, w_o) * G;
       }
     }
     radiance += radiance_light / float(sampler_.Count());

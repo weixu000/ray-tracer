@@ -5,11 +5,11 @@
 
 using namespace glm;
 
-Sphere::Sphere(const Material &mat, const glm::mat4 &transform,
-               const glm::vec3 &position, float radius)
-    : LocalShape(mat, scale(translate(transform, position), vec3(radius))) {}
+Sphere::Sphere(const glm::vec3& position, float radius,
+               const glm::mat4& transform, const MaterialRef& mat)
+    : LocalShape(scale(translate(transform, position), vec3(radius)), mat) {}
 
-std::optional<LocalInfo> Sphere::HitLocal(const Ray &ray) const {
+std::optional<LocalInfo> Sphere::HitLocal(const Ray& ray) const {
   const auto d = ray.direction, o = ray.origin;
   const auto d_o = dot(d, o);
   const auto d2 = length2(d);

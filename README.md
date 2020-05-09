@@ -25,8 +25,7 @@ In `bvh.hpp` and `bvh.cpp` I implement Bounding Volume Hierarchy and use it to h
 # Other things
 - The project structure looks like `pbrt` to some extent
 - `SimpleIntegrator`, `DirectionalLight`, `PointLight` have been removed
-- `BRRF` hold information on how to render this point
-- `Material` computes `BRDF` for specific position on the surface
+- `Phong` computes Phong reflection model
 - In `path_integrator.hpp` and `path_integrator.cpp`, naive implementation and NEE implementation are separated into two classes.
 - Russian roulette can be enabled by template parameter. I use template to reduce code duplication
 - Enable multi-threading to accelerate rendering

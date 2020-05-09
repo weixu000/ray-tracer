@@ -2,9 +2,9 @@
 
 using namespace glm;
 
-Triangle::Triangle(const Material &mat, const glm::mat4 &transform,
-                   const glm::vec3 &v0, const glm::vec3 &v1,
-                   const glm::vec3 &v2)
+Triangle::Triangle(const glm::mat4& transform, const glm::vec3& v0,
+                   const glm::vec3& v1, const glm::vec3& v2,
+                   const MaterialRef& mat)
     : Shape(mat) {
   const auto v0_w = vec3(transform * vec4(v0, 1.f)),
              v1_w = vec3(transform * vec4(v1, 1.f)),
@@ -16,7 +16,7 @@ Triangle::Triangle(const Material &mat, const glm::mat4 &transform,
 }
 
 // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-std::optional<LocalInfo> Triangle::Hit(const Ray &ray) const {
+std::optional<LocalInfo> Triangle::Hit(const Ray& ray) const {
   const auto d = ray.direction, o = ray.origin;
   const auto h = cross(d, e2_);
   const auto a = dot(e1_, h);

@@ -5,16 +5,15 @@
 #include "random.hpp"
 #include "sampler.hpp"
 
-class PhongSampler : public Sampler {
+class PhongSampler {
  public:
-  std::tuple<glm::vec3, float> Sample(const BRDF& brdf,
-                                      const glm::vec3& w_o) const override {
+  std::tuple<glm::vec3, float> Sample(const glm::vec3& k_d,
+                                      const glm::vec3& k_s, float s,
+                                      const glm::vec3& n,
+                                      const glm::vec3& w_o) const {
     using namespace glm;
 
-    const auto n = brdf.normal;
-    const auto s = brdf.shininess;
-    const auto t =
-        compMax(brdf.specular) / compMax(brdf.diffuse + brdf.specular);
+    const auto t = compMax(k_s) / compMax(k_d + k_s);
     const auto r = reflect(-w_o, n);
     const auto w_i = Random() <= t ? SampleSpecular(r, s) : SampleDiffuse(n);
     const auto pdf = (1 - t) * max(0.f, dot(n, w_i)) / PI +

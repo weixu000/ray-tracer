@@ -16,7 +16,7 @@ class NormalIntegrator : public Integrator {
     const auto ray = camera_.GenerateEyeRay(pixel + .5f);
 
     if (const auto hit = scene_.TraceShapes(ray)) {
-      return (hit->normal + 1.f) / 2.f;
+      return (hit->n + 1.f) / 2.f;
     } else {
       return vec3(0.f);
     }
