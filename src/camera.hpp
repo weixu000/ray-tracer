@@ -3,12 +3,10 @@
 #include "ray.hpp"
 
 class Camera {
-public:
-  Camera() = default;
+ public:
   Camera(const glm::vec3 &look_from, const glm::vec3 &look_at,
          const glm::vec3 &up, float fov, int w, int h);
 
-  //
   /**
    * Pixel coordinates normalized by height
    * Direction of ray is normalized
@@ -17,7 +15,7 @@ public:
 
   int width_, height_;
 
-private:
+ private:
   float tan_fov_2_;
   glm::mat3 view_;
   glm::vec3 look_from_;

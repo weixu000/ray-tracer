@@ -2,7 +2,7 @@
 
 #include <climits>
 
-#include "ray.hpp"
+#include "../ray.hpp"
 
 /**
  * Axis-aligned bounding box

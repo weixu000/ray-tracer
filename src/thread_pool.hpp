@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <condition_variable>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -12,10 +13,8 @@
 #include <thread>
 #include <vector>
 
-#include <condition_variable>
-
 class ThreadPool {
-public:
+ public:
   // the constructor just launches some amount of workers
   ThreadPool(size_t threads = std::thread::hardware_concurrency())
       : stop(false) {
@@ -64,7 +63,7 @@ public:
     }
   }
 
-private:
+ private:
   // need to keep track of threads so we can join them
   std::vector<std::thread> workers;
   // the task queue

@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "bvh.hpp"
 #include "lights/light.hpp"
 #include "materials/ggx.hpp"
 #include "materials/phong.hpp"
+#include "shapes/bvh.hpp"
 
 /**
  * Hold primitives and lights

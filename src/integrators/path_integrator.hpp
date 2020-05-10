@@ -3,12 +3,28 @@
 #include <type_traits>
 #include <variant>
 
-#include "../samplers/cosine_sampler.hpp"
-#include "../samplers/hemisphere_sampler.hpp"
 #include "../samplers/independent_multisampler.hpp"
+#include "../samplers/sampler.hpp"
 #include "integrator.hpp"
 
 enum class Sampling { Hemisphere, Cosine, BRDF };
+
+template <Sampling sampling>
+std::tuple<glm::vec3, float> ImportanceSample(const MaterialRef& material,
+                                              const glm::vec3& n,
+                                              const glm::vec3& w_o,
+                                              const Scene& scene) {
+  switch (sampling) {
+    case Sampling::Hemisphere: {
+      return SampleHemisphere(n);
+    }
+    case Sampling::Cosine: {
+      return SampleConsine(n);
+    }
+    case Sampling::BRDF:
+      return scene.SampleBrdf(material, n, w_o);
+  }
+}
 
 template <Sampling sampling>
 class PathIntegratorSimple : public Integrator {
@@ -33,18 +49,7 @@ class PathIntegratorSimple : public Integrator {
   std::tuple<glm::vec3, float> SampleBrdf(const MaterialRef& material,
                                           const glm::vec3& n,
                                           const glm::vec3& w_o) const {
-    switch (sampling) {
-      case Sampling::Hemisphere: {
-        static HemisphereSampler sampler;
-        return sampler.Sample(n);
-      }
-      case Sampling::Cosine: {
-        static CosineSampler sampler;
-        return sampler.Sample(n);
-      }
-      case Sampling::BRDF:
-        return scene_.SampleBrdf(material, n, w_o);
-    }
+    return ImportanceSample<sampling>(material, n, w_o, scene_);
   }
 
   int max_depth_;
@@ -90,18 +95,7 @@ class PathIntegrator : public Integrator {
   std::tuple<glm::vec3, float> SampleBrdf(const MaterialRef& material,
                                           const glm::vec3& n,
                                           const glm::vec3& w_o) const {
-    switch (sampling) {
-      case Sampling::Hemisphere: {
-        static HemisphereSampler sampler;
-        return sampler.Sample(n);
-      }
-      case Sampling::Cosine: {
-        static CosineSampler sampler;
-        return sampler.Sample(n);
-      }
-      case Sampling::BRDF:
-        return scene_.SampleBrdf(material, n, w_o);
-    }
+    return ImportanceSample<sampling>(material, n, w_o, scene_);
   }
 
   glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,

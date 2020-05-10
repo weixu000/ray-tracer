@@ -2,9 +2,9 @@
 #include <glm/glm.hpp>
 #include <optional>
 
-#include "../aabb.hpp"
 #include "../materials/material_ref.hpp"
 #include "../ray.hpp"
+#include "aabb.hpp"
 #include "local_info.hpp"
 #include "ray_hit.hpp"
 

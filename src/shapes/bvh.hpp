@@ -4,8 +4,8 @@
 #include <variant>
 #include <vector>
 
-#include "shapes/sphere.hpp"
-#include "shapes/triangle.hpp"
+#include "sphere.hpp"
+#include "triangle.hpp"
 
 /**
  * Bounding Volume Hierarchy
