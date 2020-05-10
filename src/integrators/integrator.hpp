@@ -11,8 +11,8 @@
  */
 class Integrator {
  public:
-  Integrator(const Scene &scene, const Camera &camera)
-      : scene_(scene), camera_(camera) {}
+  Integrator(const Scene &scene, const Camera &camera, float gamma)
+      : scene_(scene), camera_(camera), gamma_(gamma) {}
 
   virtual ~Integrator() = default;
 
@@ -24,4 +24,6 @@ class Integrator {
 
  private:
   virtual glm::vec3 ShadePixel(const glm::vec2 &pixel) const = 0;
+
+  float gamma_;
 };

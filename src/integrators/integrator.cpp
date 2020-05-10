@@ -24,7 +24,8 @@ Image Integrator::Render() const {
     for (int i = 0; i < h; ++i) {
       for (int j = 0; j < w; ++j) {
         pool.Add([this, &output, i, j]() {
-          output.At(i, j) = u8vec3(min(ShadePixel({i, j}), vec3(1.f)) * 255.0f);
+          const auto color = pow(ShadePixel({i, j}), vec3{1 / gamma_});
+          output.At(i, j) = u8vec3(min(color, vec3{1.f}) * 255.0f);
         });
       }
     }
@@ -32,7 +33,8 @@ Image Integrator::Render() const {
 #else
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < w; ++j) {
-      output.At(i, j) = u8vec3(min(ShadePixel({i, j}), vec3(1.f)) * 255.0f);
+      const auto color = pow(ShadePixel({i, j}), vec3{1 / gamma_});
+      output.At(i, j) = u8vec3(min(color, vec3{1.f}) * 255.0f);
     }
   }
 #endif

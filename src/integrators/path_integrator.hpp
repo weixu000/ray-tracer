@@ -6,7 +6,7 @@
 #include "../samplers/cosine_sampler.hpp"
 #include "../samplers/hemisphere_sampler.hpp"
 #include "../samplers/independent_multisampler.hpp"
-#include "direct_integrator.hpp"
+#include "integrator.hpp"
 
 enum class Sampling { Hemisphere, Cosine, BRDF };
 
@@ -53,18 +53,20 @@ class PathIntegratorSimple : public Integrator {
 };
 
 template <bool russian_roulette, typename LightSampler, Sampling sampling>
-class PathIntegrator : public DirectIntegrator<LightSampler> {
+class PathIntegrator : public Integrator {
  public:
-  using Base = DirectIntegrator<LightSampler>;
-
   template <bool T = russian_roulette, typename... Args>
-  PathIntegrator(std::enable_if_t<T, int> num_pixel_sample, Args&&... args)
-      : Base(std::forward<Args>(args)...), pixel_sampler_(num_pixel_sample) {}
+  PathIntegrator(std::enable_if_t<T, int> num_pixel_sample, int light_sample,
+                 Args&&... args)
+      : Integrator(std::forward<Args>(args)...),
+        light_sampler_(light_sample),
+        pixel_sampler_(num_pixel_sample) {}
 
   template <bool T = !russian_roulette, typename... Args>
   PathIntegrator(std::enable_if_t<T, int> max_depth, int num_pixel_sample,
-                 Args&&... args)
-      : Base(std::forward<Args>(args)...),
+                 int light_sample, Args&&... args)
+      : Integrator(std::forward<Args>(args)...),
+        light_sampler_(light_sample),
         pixel_sampler_(num_pixel_sample),
         max_depth_(max_depth) {}
 
@@ -72,7 +74,7 @@ class PathIntegrator : public DirectIntegrator<LightSampler> {
   glm::vec3 ShadePixel(const glm::vec2& pixel) const override {
     auto radiance = glm::vec3(0.f);
     for (const auto& sample : pixel_sampler_.Sample()) {
-      radiance += Sample(Base::camera_.GenerateEyeRay(pixel + sample));
+      radiance += Sample(camera_.GenerateEyeRay(pixel + sample));
     }
     return radiance / float(pixel_sampler_.Count());
   }
@@ -98,12 +100,17 @@ class PathIntegrator : public DirectIntegrator<LightSampler> {
         return sampler.Sample(n);
       }
       case Sampling::BRDF:
-        return Base::scene_.SampleBrdf(material, n, w_o);
+        return scene_.SampleBrdf(material, n, w_o);
     }
   }
 
+  glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,
+                        const glm::vec3& w_o,
+                        const MaterialRef& material) const;
+
   std::conditional_t<russian_roulette, std::monostate, int> max_depth_;
 
+  LightSampler light_sampler_;
   SquareMultiampler pixel_sampler_;
 };
 

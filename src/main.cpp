@@ -9,7 +9,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "integrators/direct_integrator.hpp"
 #include "integrators/path_integrator.hpp"
 #include "lights/quad_light.hpp"
 #include "registry_factory.hpp"
@@ -198,82 +197,62 @@ using RegistryRR =
              Entry<true, Sampling::BRDF,
                    IntegratorRR<StratifiedMultisampler, Sampling::BRDF>>>;
 
+template <typename C, typename K, typename V>
+V GetDefault(const C &m, const K &key, const V &defval) {
+  const auto it = m.find(key);
+  if (it == m.end()) return defval;
+  istringstream ss(it->second);
+  V ret;
+  ss >> ret;
+  return ret;
+}
+
 unique_ptr<Integrator> LoadIntegrator(const Options &options,
                                       const Scene &scene,
                                       const Camera &camera) {
-  if (options.at("integrator") == "raytracer") {
-    throw std::runtime_error("Simple ray tracer removed form implementation.");
-  } else if (options.at("integrator") == "analyticdirect") {
-    throw std::runtime_error(
-        "Analytic direct integrator removed form implementation.");
-  } else {
-    int num_light_samples = 1;
-    if (options.count("lightsamples")) {
-      istringstream ss(options.at("lightsamples"));
-      ss >> num_light_samples;
-    }
+  if (options.at("integrator") == "pathtracer") {
+    const auto num_light_samples = GetDefault(options, "lightsamples", 1);
     const auto light_stratify =
-        options.count("lightstratify") && options.at("lightstratify") == "on";
+        GetDefault(options, "lightstratify", "off"s) == "on";
+    const auto next_event =
+        GetDefault(options, "nexteventestimation", "off"s) == "on";
+    const auto russian_roulette =
+        GetDefault(options, "russianroulette", "off"s) == "on";
+    const auto spp = GetDefault(options, "spp", 1);
+    const auto max_depth = GetDefault(options, "maxdepth", 5);
+    const auto gamma = GetDefault(options, "gamma", 1.f);
 
-    if (options.at("integrator") == "direct") {
-      if (light_stratify) {
-        return make_unique<DirectIntegrator<StratifiedMultisampler>>(
-            num_light_samples, scene, camera);
-      } else {
-        return make_unique<DirectIntegrator<SquareMultiampler>>(
-            num_light_samples, scene, camera);
+    Sampling importance_sampling = Sampling::Hemisphere;
+    if (options.count("importancesampling")) {
+      const auto method = options.at("importancesampling");
+      if (method == "cosine") {
+        importance_sampling = Sampling::Cosine;
+      } else if (method == "brdf") {
+        importance_sampling = Sampling::BRDF;
       }
-    } else if (options.at("integrator") == "pathtracer") {
-      const auto next_event = options.count("nexteventestimation") &&
-                              options.at("nexteventestimation") == "on";
-
-      const auto russian_roulette = options.count("russianroulette") &&
-                                    options.at("russianroulette") == "on";
-      Sampling importance_sampling = Sampling::Hemisphere;
-      if (options.count("importancesampling")) {
-        const auto method = options.at("importancesampling");
-        if (method == "cosine") {
-          importance_sampling = Sampling::Cosine;
-        } else if (method == "brdf") {
-          importance_sampling = Sampling::BRDF;
-        }
-      }
-
-      int spp = 1;
-      if (options.count("spp")) {
-        istringstream ss(options.at("spp"));
-        ss >> spp;
-      }
-
-      int max_depth = 5;
-      if (options.count("maxdepth")) {
-        istringstream ss(options.at("maxdepth"));
-        ss >> max_depth;
-      }
-
-      if (!next_event) {
-        switch (importance_sampling) {
-          case Sampling::Hemisphere:
-            return make_unique<PathIntegratorSimple<Sampling::Hemisphere>>(
-                spp, max_depth, scene, camera);
-          case Sampling::Cosine:
-            return make_unique<PathIntegratorSimple<Sampling::Cosine>>(
-                spp, max_depth, scene, camera);
-          case Sampling::BRDF:
-            return make_unique<PathIntegratorSimple<Sampling::BRDF>>(
-                spp, max_depth, scene, camera);
-        }
-      } else if (russian_roulette) {
-        return RegistryRR::Get(light_stratify, importance_sampling, spp,
-                               num_light_samples, scene, camera);
-      } else {
-        return RegistryNEE::Get(light_stratify, importance_sampling, max_depth,
-                                spp, num_light_samples, scene, camera);
-      }
-    } else {
-      throw std::runtime_error("Unknown integrator: " +
-                               options.at("integrator"));
     }
+
+    if (!next_event) {
+      switch (importance_sampling) {
+        case Sampling::Hemisphere:
+          return make_unique<PathIntegratorSimple<Sampling::Hemisphere>>(
+              spp, max_depth, scene, camera, gamma);
+        case Sampling::Cosine:
+          return make_unique<PathIntegratorSimple<Sampling::Cosine>>(
+              spp, max_depth, scene, camera, gamma);
+        case Sampling::BRDF:
+          return make_unique<PathIntegratorSimple<Sampling::BRDF>>(
+              spp, max_depth, scene, camera, gamma);
+      }
+    } else if (russian_roulette) {
+      return RegistryRR::Get(light_stratify, importance_sampling, spp,
+                             num_light_samples, scene, camera, gamma);
+    } else {
+      return RegistryNEE::Get(light_stratify, importance_sampling, max_depth,
+                              spp, num_light_samples, scene, camera, gamma);
+    }
+  } else {
+    throw std::runtime_error("Unknown integrator: " + options.at("integrator"));
   }
 }
 }  // namespace
