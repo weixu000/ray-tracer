@@ -2,6 +2,9 @@
 
 #include <cstddef>
 
+enum class BRDF { Phong, GGX };
+
 struct MaterialRef {
-  size_t type, id;
+  BRDF type;
+  size_t id;
 };

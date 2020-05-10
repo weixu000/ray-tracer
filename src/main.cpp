@@ -41,13 +41,26 @@ basic_istream<CharT, Traits> &operator>>(basic_istream<CharT, Traits> &is,
 
 using Options = unordered_map<string, string>;
 
+template <BRDF type,
+          typename Material = conditional_t<type == BRDF::GGX, GGX, Phong>,
+          typename... Args>
+MaterialRef AddMaterial(vector<Material> &materials, Args... args) {
+  Material mat(forward<Args>(args)...);
+  if (materials.empty() || materials.back() != mat) {
+    materials.push_back(mat);
+  }
+  return {type, materials.size() - 1};
+}
+
 auto LoadScene(ifstream &fs) {
   Scene scene;
   Options others;
   vector<unique_ptr<const Shape>> shapes;
-  vector<mat4> transform_stack;
-  Phong current_material;
   vector<vec3> verts;
+  vector<mat4> transform_stack;
+  vec3 k_d, k_s;
+  float s, alpha;
+  auto use_ggx = false;
 
   string line;
   while (getline(fs, line)) {
@@ -61,9 +74,11 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      shapes.emplace_back(
-          make_unique<Sphere>(position, rad, StackMatrices(transform_stack),
-                              MaterialRef{0, scene.phong.size() - 1}));
+      const auto mat = use_ggx
+                           ? AddMaterial<BRDF::GGX>(scene.ggx, alpha, k_d, k_s)
+                           : AddMaterial<BRDF::Phong>(scene.phong, s, k_d, k_s);
+      shapes.emplace_back(make_unique<Sphere>(
+          position, rad, StackMatrices(transform_stack), mat));
     } else if (command == "maxverts") {
       continue;  // Not used
     } else if (command == "vertex") {
@@ -73,9 +88,12 @@ auto LoadScene(ifstream &fs) {
     } else if (command == "tri") {
       ivec3 t;
       ss >> t;
-      shapes.emplace_back(make_unique<Triangle>(
-          StackMatrices(transform_stack), verts[t[0]], verts[t[1]], verts[t[2]],
-          MaterialRef{0, scene.phong.size() - 1}));
+      const auto mat = use_ggx
+                           ? AddMaterial<BRDF::GGX>(scene.ggx, alpha, k_d, k_s)
+                           : AddMaterial<BRDF::Phong>(scene.phong, s, k_d, k_s);
+      shapes.emplace_back(make_unique<Triangle>(StackMatrices(transform_stack),
+                                                verts[t[0]], verts[t[1]],
+                                                verts[t[2]], mat));
     } else if (command == "maxvertnorms") {
       continue;  // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {
@@ -110,14 +128,17 @@ auto LoadScene(ifstream &fs) {
       ss >> v0 >> e1 >> e2 >> intensity;
       scene.lights.push_back(make_unique<QuadLight>(intensity, v0, e1, e2));
     } else if (command == "diffuse") {
-      ss >> current_material.k_d;
-      scene.phong.push_back(current_material);
+      ss >> k_d;
     } else if (command == "specular") {
-      ss >> current_material.k_s;
-      scene.phong.push_back(current_material);
+      ss >> k_s;
     } else if (command == "shininess") {
-      ss >> current_material.s;
-      scene.phong.push_back(current_material);
+      ss >> s;
+    } else if (command == "roughness") {
+      ss >> alpha;
+    } else if (command == "brdf") {
+      string option;
+      getline(ss >> ws, option);
+      use_ggx = option == "ggx";
     } else {
       string option;
       getline(ss >> ws, option);

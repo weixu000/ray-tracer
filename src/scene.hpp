@@ -7,6 +7,7 @@
 
 #include "bvh.hpp"
 #include "lights/light.hpp"
+#include "materials/ggx.hpp"
 #include "materials/phong.hpp"
 
 /**
@@ -17,16 +18,27 @@ class Scene {
   BVH group;
   std::vector<std::unique_ptr<const Light>> lights;
   std::vector<Phong> phong;
+  std::vector<GGX> ggx;
 
   template <typename... Args>
   glm::vec3 Brdf(const MaterialRef &material, Args &&... args) const {
-    return phong[material.id].Brdf(std::forward<Args>(args)...);
+    switch (material.type) {
+      case BRDF::Phong:
+        return phong[material.id].Brdf(std::forward<Args>(args)...);
+      case BRDF::GGX:
+        return ggx[material.id].Brdf(std::forward<Args>(args)...);
+    }
   }
 
   template <typename... Args>
   std::tuple<glm::vec3, float> SampleBrdf(const MaterialRef &material,
                                           Args &&... args) const {
-    return phong[material.id].SampleBrdf(std::forward<Args>(args)...);
+    switch (material.type) {
+      case BRDF::Phong:
+        return phong[material.id].SampleBrdf(std::forward<Args>(args)...);
+      case BRDF::GGX:
+        return ggx[material.id].SampleBrdf(std::forward<Args>(args)...);
+    }
   }
 
   std::optional<RayHit> TraceShapes(const Ray &ray) const {
