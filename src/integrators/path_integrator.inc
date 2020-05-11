@@ -10,7 +10,7 @@ glm::vec3 PathIntegratorSimple<sampling>::Sample(const Ray &ray,
                                                  int depth) const {
   using namespace glm;
 
-  if (depth <= 0) {
+  if (depth < 0) {
     return vec3(0.f);
   }
 
