@@ -31,3 +31,5 @@ inline std::tuple<glm::vec3, float> SampleConsine(const glm::vec3& n) {
   const auto theta = acos(sqrt(xi_1)), phi = 2 * PI * xi_2;
   return std::make_tuple(ConvertSpherical(theta, phi, n), sqrt(xi_1) / PI);
 }
+
+inline glm::vec2 SampleSquare() { return {Random(), Random()}; }

@@ -3,7 +3,6 @@
 #include <type_traits>
 #include <variant>
 
-#include "../samplers/independent_multisampler.hpp"
 #include "../samplers/sampler.hpp"
 #include "integrator.hpp"
 
@@ -33,15 +32,16 @@ class PathIntegratorSimple : public Integrator {
   PathIntegratorSimple(int num_sample, int max_depth, Args&&... args)
       : Integrator(std::forward<Args>(args)...),
         max_depth_(max_depth),
-        pixel_sampler_(num_sample) {}
+        num_sample_(num_sample) {}
 
  private:
   glm::vec3 ShadePixel(const glm::vec2& pixel) const override {
     auto radiance = glm::vec3(0.f);
-    for (const auto& sample : pixel_sampler_.Sample()) {
-      radiance += Sample(camera_.GenerateEyeRay(pixel + sample), max_depth_);
+    for (int i = 0; i < num_sample_; ++i) {
+      radiance +=
+          Sample(camera_.GenerateEyeRay(pixel + SampleSquare()), max_depth_);
     }
-    return radiance / float(pixel_sampler_.Count());
+    return radiance / float(num_sample_);
   }
 
   glm::vec3 Sample(const Ray& ray, int depth) const;
@@ -53,35 +53,31 @@ class PathIntegratorSimple : public Integrator {
   }
 
   int max_depth_;
-
-  SquareMultiampler pixel_sampler_;
+  int num_sample_;
 };
 
-template <bool russian_roulette, typename LightSampler, Sampling sampling>
+template <bool russian_roulette, Sampling sampling>
 class PathIntegrator : public Integrator {
  public:
   template <bool T = russian_roulette, typename... Args>
-  PathIntegrator(std::enable_if_t<T, int> num_pixel_sample, int light_sample,
-                 Args&&... args)
+  PathIntegrator(std::enable_if_t<T, int> num_pixel_sample, Args&&... args)
       : Integrator(std::forward<Args>(args)...),
-        light_sampler_(light_sample),
-        pixel_sampler_(num_pixel_sample) {}
+        num_pixel_sample_(num_pixel_sample) {}
 
   template <bool T = !russian_roulette, typename... Args>
   PathIntegrator(std::enable_if_t<T, int> max_depth, int num_pixel_sample,
-                 int light_sample, Args&&... args)
+                 Args&&... args)
       : Integrator(std::forward<Args>(args)...),
-        light_sampler_(light_sample),
-        pixel_sampler_(num_pixel_sample),
+        num_pixel_sample_(num_pixel_sample),
         max_depth_(max_depth) {}
 
  private:
   glm::vec3 ShadePixel(const glm::vec2& pixel) const override {
     auto radiance = glm::vec3(0.f);
-    for (const auto& sample : pixel_sampler_.Sample()) {
-      radiance += Sample(camera_.GenerateEyeRay(pixel + sample));
+    for (int i = 0; i < num_pixel_sample_; ++i) {
+      radiance += Sample(camera_.GenerateEyeRay(pixel + SampleSquare()));
     }
-    return radiance / float(pixel_sampler_.Count());
+    return radiance / float(num_pixel_sample_);
   }
 
   glm::vec3 Sample(const Ray& ray) const;
@@ -103,14 +99,12 @@ class PathIntegrator : public Integrator {
                         const MaterialRef& material) const;
 
   std::conditional_t<russian_roulette, std::monostate, int> max_depth_;
-
-  LightSampler light_sampler_;
-  SquareMultiampler pixel_sampler_;
+  int num_pixel_sample_;
 };
 
-template <typename LightSampler, Sampling sampling>
-using IntegratorNEE = PathIntegrator<false, LightSampler, sampling>;
-template <typename LightSampler, Sampling sampling>
-using IntegratorRR = PathIntegrator<true, LightSampler, sampling>;
+template <Sampling sampling>
+using IntegratorNEE = PathIntegrator<false, sampling>;
+template <Sampling sampling>
+using IntegratorRR = PathIntegrator<true, sampling>;
 
 #include "path_integrator.inc"

@@ -12,8 +12,6 @@
 #include "integrators/path_integrator.hpp"
 #include "lights/quad_light.hpp"
 #include "registry_factory.hpp"
-#include "samplers/independent_multisampler.hpp"
-#include "samplers/stratified_multisampler.hpp"
 #include "shapes/sphere.hpp"
 #include "shapes/triangle.hpp"
 
@@ -163,39 +161,20 @@ auto LoadCamera(const Options &options) {
   return Camera(look_from, look_at, up, fov, width, height);
 }
 
-template <bool light_stratify, Sampling sampling, typename T>
-using Entry = RegistryFactory<Integrator, bool, Sampling>::Entry<light_stratify,
-                                                                 sampling, T>;
+template <Sampling sampling, typename T>
+using Entry = RegistryFactory<Integrator, Sampling>::Entry<sampling, T>;
 template <typename... Ts>
-using Registry = RegistryFactory<Integrator, bool, Sampling>::Registry<Ts...>;
+using Registry = RegistryFactory<Integrator, Sampling>::Registry<Ts...>;
 
 using RegistryNEE =
-    Registry<Entry<false, Sampling::Hemisphere,
-                   IntegratorNEE<SquareMultiampler, Sampling::Hemisphere>>,
-             Entry<false, Sampling::Cosine,
-                   IntegratorNEE<SquareMultiampler, Sampling::Cosine>>,
-             Entry<false, Sampling::BRDF,
-                   IntegratorNEE<SquareMultiampler, Sampling::BRDF>>,
-             Entry<true, Sampling::Hemisphere,
-                   IntegratorNEE<StratifiedMultisampler, Sampling::Hemisphere>>,
-             Entry<true, Sampling::Cosine,
-                   IntegratorNEE<StratifiedMultisampler, Sampling::Cosine>>,
-             Entry<true, Sampling::BRDF,
-                   IntegratorNEE<StratifiedMultisampler, Sampling::BRDF>>>;
+    Registry<Entry<Sampling::Hemisphere, IntegratorNEE<Sampling::Hemisphere>>,
+             Entry<Sampling::Cosine, IntegratorNEE<Sampling::Cosine>>,
+             Entry<Sampling::BRDF, IntegratorNEE<Sampling::BRDF>>>;
 
 using RegistryRR =
-    Registry<Entry<false, Sampling::Hemisphere,
-                   IntegratorRR<SquareMultiampler, Sampling::Hemisphere>>,
-             Entry<false, Sampling::Cosine,
-                   IntegratorRR<SquareMultiampler, Sampling::Cosine>>,
-             Entry<false, Sampling::BRDF,
-                   IntegratorRR<SquareMultiampler, Sampling::BRDF>>,
-             Entry<true, Sampling::Hemisphere,
-                   IntegratorRR<StratifiedMultisampler, Sampling::Hemisphere>>,
-             Entry<true, Sampling::Cosine,
-                   IntegratorRR<StratifiedMultisampler, Sampling::Cosine>>,
-             Entry<true, Sampling::BRDF,
-                   IntegratorRR<StratifiedMultisampler, Sampling::BRDF>>>;
+    Registry<Entry<Sampling::Hemisphere, IntegratorRR<Sampling::Hemisphere>>,
+             Entry<Sampling::Cosine, IntegratorRR<Sampling::Cosine>>,
+             Entry<Sampling::BRDF, IntegratorRR<Sampling::BRDF>>>;
 
 template <typename C, typename K, typename V>
 V GetDefault(const C &m, const K &key, const V &defval) {
@@ -211,9 +190,6 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
                                       const Scene &scene,
                                       const Camera &camera) {
   if (options.at("integrator") == "pathtracer") {
-    const auto num_light_samples = GetDefault(options, "lightsamples", 1);
-    const auto light_stratify =
-        GetDefault(options, "lightstratify", "off"s) == "on";
     const auto next_event =
         GetDefault(options, "nexteventestimation", "off"s) == "on";
     const auto russian_roulette =
@@ -245,11 +221,10 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
               spp, max_depth, scene, camera, gamma);
       }
     } else if (russian_roulette) {
-      return RegistryRR::Get(light_stratify, importance_sampling, spp,
-                             num_light_samples, scene, camera, gamma);
+      return RegistryRR::Get(importance_sampling, spp, scene, camera, gamma);
     } else {
-      return RegistryNEE::Get(light_stratify, importance_sampling, max_depth,
-                              spp, num_light_samples, scene, camera, gamma);
+      return RegistryNEE::Get(importance_sampling, max_depth, spp, scene,
+                              camera, gamma);
     }
   } else {
     throw std::runtime_error("Unknown integrator: " + options.at("integrator"));
