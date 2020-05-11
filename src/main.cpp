@@ -209,17 +209,7 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
     }
 
     if (!next_event) {
-      switch (importance_sampling) {
-        case Sampling::Hemisphere:
-          return make_unique<PathIntegratorSimple<Sampling::Hemisphere>>(
-              spp, max_depth, scene, camera, gamma);
-        case Sampling::Cosine:
-          return make_unique<PathIntegratorSimple<Sampling::Cosine>>(
-              spp, max_depth, scene, camera, gamma);
-        case Sampling::BRDF:
-          return make_unique<PathIntegratorSimple<Sampling::BRDF>>(
-              spp, max_depth, scene, camera, gamma);
-      }
+      throw std::runtime_error("Simple path tracer removed");
     } else if (russian_roulette) {
       return RegistryRR::Get(importance_sampling, spp, scene, camera, gamma);
     } else {

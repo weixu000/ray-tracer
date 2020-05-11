@@ -25,37 +25,6 @@ std::tuple<glm::vec3, float> ImportanceSample(const MaterialRef& material,
   }
 }
 
-template <Sampling sampling>
-class PathIntegratorSimple : public Integrator {
- public:
-  template <typename... Args>
-  PathIntegratorSimple(int num_sample, int max_depth, Args&&... args)
-      : Integrator(std::forward<Args>(args)...),
-        max_depth_(max_depth),
-        num_sample_(num_sample) {}
-
- private:
-  glm::vec3 ShadePixel(const glm::vec2& pixel) const override {
-    auto radiance = glm::vec3(0.f);
-    for (int i = 0; i < num_sample_; ++i) {
-      radiance +=
-          Sample(camera_.GenerateEyeRay(pixel + SampleSquare()), max_depth_);
-    }
-    return radiance / float(num_sample_);
-  }
-
-  glm::vec3 Sample(const Ray& ray, int depth) const;
-
-  std::tuple<glm::vec3, float> SampleBrdf(const MaterialRef& material,
-                                          const glm::vec3& n,
-                                          const glm::vec3& w_o) const {
-    return ImportanceSample<sampling>(material, n, w_o, scene_);
-  }
-
-  int max_depth_;
-  int num_sample_;
-};
-
 template <bool russian_roulette, Sampling sampling>
 class PathIntegrator : public Integrator {
  public:

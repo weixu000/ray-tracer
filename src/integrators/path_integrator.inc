@@ -5,28 +5,6 @@
 
 #include "../samplers/random.hpp"
 
-template <Sampling sampling>
-glm::vec3 PathIntegratorSimple<sampling>::Sample(const Ray &ray,
-                                                 int depth) const {
-  using namespace glm;
-
-  if (depth < 0) {
-    return vec3(0.f);
-  }
-
-  return scene_.Trace(
-      ray, [&](const LightEmission &emission) { return emission.L_e; },
-      [&](const RayHit &hit) {
-        const auto x = ray(hit.t), n = normalize(hit.n),
-                   w_o = -normalize(ray.direction);
-        const auto [w_i, pdf] = SampleBrdf(hit.mat, hit.n, w_o);
-        if (dot(w_i, n) <= 0 || pdf == 0) return vec3{0.f};
-        const auto L_r = Sample({x + w_i * SHADOW_EPSILON, w_i}, depth - 1);
-        return L_r * scene_.Brdf(hit.mat, hit.n, w_i, w_o) *
-               max(0.f, dot(n, w_i)) / pdf;
-      });
-}
-
 template <bool russian_roulette, Sampling sampling>
 glm::vec3 PathIntegrator<russian_roulette, sampling>::Sample(
     const Ray &ray) const {
