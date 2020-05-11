@@ -12,8 +12,10 @@ class Material {
   virtual glm::vec3 Brdf(const glm::vec3 &n, const glm::vec3 &w_i,
                          const glm::vec3 &w_o) const = 0;
 
-  virtual std::tuple<glm::vec3, float> SampleBrdf(
-      const glm::vec3 &n, const glm::vec3 &w_o) const = 0;
+  virtual glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_o) const = 0;
+
+  virtual float Pdf(const glm::vec3 &n, const glm::vec3 &w_i,
+                    const glm::vec3 &w_o) const = 0;
 
  protected:
   glm::vec3 DiffuseBrdf() const { return k_d_ * one_over_pi; }

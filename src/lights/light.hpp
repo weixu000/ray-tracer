@@ -10,7 +10,7 @@
  */
 struct LightSample {
   glm::vec3 light;
-  glm::vec3 radience, normal;
+  glm::vec3 radiance, normal;
   float jacobian;  // jacobian determinant
   float distance;
 
@@ -25,7 +25,8 @@ struct LightSample {
  */
 struct LightEmission {
   float distance;
-  glm::vec3 L_e;
+  glm::vec3 L_e, normal;
+  float jacobian;  // jacobian determinant
 };
 
 class Light {

@@ -8,24 +8,7 @@
 
 enum class Sampling { Hemisphere, Cosine, BRDF };
 
-template <Sampling sampling>
-std::tuple<glm::vec3, float> ImportanceSample(const MaterialRef& material,
-                                              const glm::vec3& n,
-                                              const glm::vec3& w_o,
-                                              const Scene& scene) {
-  switch (sampling) {
-    case Sampling::Hemisphere: {
-      return SampleHemisphere(n);
-    }
-    case Sampling::Cosine: {
-      return SampleConsine(n);
-    }
-    case Sampling::BRDF:
-      return scene.SampleBrdf(material, n, w_o);
-  }
-}
-
-template <bool russian_roulette, Sampling sampling>
+template <bool russian_roulette, Sampling sampling, bool mis>
 class PathIntegrator : public Integrator {
  public:
   template <bool T = russian_roulette, typename... Args>
@@ -57,23 +40,30 @@ class PathIntegrator : public Integrator {
       std::conditional_t<russian_roulette, const glm::vec3&, int>
           throughput_or_depth) const;
 
-  std::tuple<glm::vec3, float> SampleBrdf(const MaterialRef& material,
-                                          const glm::vec3& n,
-                                          const glm::vec3& w_o) const {
-    return ImportanceSample<sampling>(material, n, w_o, scene_);
-  }
+  glm::vec3 SampleBrdf(const MaterialRef& material, const glm::vec3& n,
+                       const glm::vec3& w_o) const;
+  float PdfBrdf(const MaterialRef& material, const glm::vec3& n,
+                const glm::vec3& w_i, const glm::vec3& w_o) const;
+
+  float PdfLight(const glm::vec3& x, const glm::vec3& w_i) const;
 
   glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,
-                        const glm::vec3& w_o,
-                        const MaterialRef& material) const;
+                        const glm::vec3& w_o, const MaterialRef& mat) const;
+
+  template <bool brdf, bool T = mis>
+  std::enable_if_t<T, glm::vec3> MISSample(const glm::vec3& x,
+                                           const glm::vec3& n,
+                                           const glm::vec3& w_i,
+                                           const glm::vec3& w_o,
+                                           const MaterialRef& mat) const;
 
   std::conditional_t<russian_roulette, std::monostate, int> max_depth_;
   int num_pixel_sample_;
 };
 
-template <Sampling sampling>
-using IntegratorNEE = PathIntegrator<false, sampling>;
-template <Sampling sampling>
-using IntegratorRR = PathIntegrator<true, sampling>;
+template <Sampling sampling, bool mis>
+using IntegratorNEE = PathIntegrator<false, sampling, mis>;
+template <Sampling sampling, bool mis>
+using IntegratorRR = PathIntegrator<true, sampling, mis>;
 
 #include "path_integrator.inc"

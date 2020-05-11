@@ -161,20 +161,30 @@ auto LoadCamera(const Options &options) {
   return Camera(look_from, look_at, up, fov, width, height);
 }
 
-template <Sampling sampling, typename T>
-using Entry = RegistryFactory<Integrator, Sampling>::Entry<sampling, T>;
+template <Sampling sampling, bool mis, typename T>
+using Entry =
+    RegistryFactory<Integrator, Sampling, bool>::Entry<sampling, mis, T>;
 template <typename... Ts>
-using Registry = RegistryFactory<Integrator, Sampling>::Registry<Ts...>;
+using Registry = RegistryFactory<Integrator, Sampling, bool>::Registry<Ts...>;
 
-using RegistryNEE =
-    Registry<Entry<Sampling::Hemisphere, IntegratorNEE<Sampling::Hemisphere>>,
-             Entry<Sampling::Cosine, IntegratorNEE<Sampling::Cosine>>,
-             Entry<Sampling::BRDF, IntegratorNEE<Sampling::BRDF>>>;
+using RegistryNEE = Registry<
+    Entry<Sampling::Hemisphere, false,
+          IntegratorNEE<Sampling::Hemisphere, false>>,
+    Entry<Sampling::Cosine, false, IntegratorNEE<Sampling::Cosine, false>>,
+    Entry<Sampling::BRDF, false, IntegratorNEE<Sampling::BRDF, false>>,
+    Entry<Sampling::Hemisphere, true,
+          IntegratorNEE<Sampling::Hemisphere, true>>,
+    Entry<Sampling::Cosine, true, IntegratorNEE<Sampling::Cosine, true>>,
+    Entry<Sampling::BRDF, true, IntegratorNEE<Sampling::BRDF, true>>>;
 
-using RegistryRR =
-    Registry<Entry<Sampling::Hemisphere, IntegratorRR<Sampling::Hemisphere>>,
-             Entry<Sampling::Cosine, IntegratorRR<Sampling::Cosine>>,
-             Entry<Sampling::BRDF, IntegratorRR<Sampling::BRDF>>>;
+using RegistryRR = Registry<
+    Entry<Sampling::Hemisphere, false,
+          IntegratorRR<Sampling::Hemisphere, false>>,
+    Entry<Sampling::Cosine, false, IntegratorRR<Sampling::Cosine, false>>,
+    Entry<Sampling::BRDF, false, IntegratorRR<Sampling::BRDF, false>>,
+    Entry<Sampling::Hemisphere, true, IntegratorRR<Sampling::Hemisphere, true>>,
+    Entry<Sampling::Cosine, true, IntegratorRR<Sampling::Cosine, true>>,
+    Entry<Sampling::BRDF, true, IntegratorRR<Sampling::BRDF, true>>>;
 
 template <typename C, typename K, typename V>
 V GetDefault(const C &m, const K &key, const V &defval) {
@@ -190,8 +200,12 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
                                       const Scene &scene,
                                       const Camera &camera) {
   if (options.at("integrator") == "pathtracer") {
-    const auto next_event =
-        GetDefault(options, "nexteventestimation", "off"s) == "on";
+    if (GetDefault(options, "nexteventestimation", "off"s) == "off") {
+      throw std::runtime_error("Simple path tracer removed");
+    }
+
+    const auto mis =
+        GetDefault(options, "nexteventestimation", "off"s) == "mis";
     const auto russian_roulette =
         GetDefault(options, "russianroulette", "off"s) == "on";
     const auto spp = GetDefault(options, "spp", 1);
@@ -208,12 +222,11 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
       }
     }
 
-    if (!next_event) {
-      throw std::runtime_error("Simple path tracer removed");
-    } else if (russian_roulette) {
-      return RegistryRR::Get(importance_sampling, spp, scene, camera, gamma);
+    if (russian_roulette) {
+      return RegistryRR::Get(importance_sampling, mis, spp, scene, camera,
+                             gamma);
     } else {
-      return RegistryNEE::Get(importance_sampling, max_depth, spp, scene,
+      return RegistryNEE::Get(importance_sampling, mis, max_depth, spp, scene,
                               camera, gamma);
     }
   } else {

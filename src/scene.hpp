@@ -31,13 +31,22 @@ class Scene {
   }
 
   template <typename... Args>
-  std::tuple<glm::vec3, float> SampleBrdf(const MaterialRef &material,
-                                          Args &&... args) const {
+  glm::vec3 Sample(const MaterialRef &material, Args &&... args) const {
     switch (material.type) {
       case BRDF::Phong:
-        return phong[material.id].SampleBrdf(std::forward<Args>(args)...);
+        return phong[material.id].Sample(std::forward<Args>(args)...);
       case BRDF::GGX:
-        return ggx[material.id].SampleBrdf(std::forward<Args>(args)...);
+        return ggx[material.id].Sample(std::forward<Args>(args)...);
+    }
+  }
+
+  template <typename... Args>
+  float Pdf(const MaterialRef &material, Args &&... args) const {
+    switch (material.type) {
+      case BRDF::Phong:
+        return phong[material.id].Pdf(std::forward<Args>(args)...);
+      case BRDF::GGX:
+        return ggx[material.id].Pdf(std::forward<Args>(args)...);
     }
   }
 

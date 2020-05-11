@@ -20,17 +20,22 @@ class Phong : public Material {
            k_s_ * (s_ + 2) / 2.f * pow(max(0.f, dot(r, w_i)), s_) * one_over_pi;
   }
 
-  std::tuple<glm::vec3, float> SampleBrdf(const glm::vec3 &n,
-                                          const glm::vec3 &w_o) const override {
+  glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_o) const override {
     using namespace glm;
 
-    const auto t = compMax(k_s_) / compMax(k_d_ + k_s_);
     const auto r = reflect(-w_o, n);
-    const auto w_i = Random() <= t ? SampleSpecular(r, s_) : SampleDiffuse(n);
-    const auto pdf = (1 - t) * max(0.f, dot(n, w_i)) * one_over_pi +
-                     t * (s_ + 1) * Material::one_over_two_pi *
-                         pow(max(0.f, dot(r, w_i)), s_);
-    return std::make_tuple(w_i, pdf);
+    return Random() <= ProbSpecular() ? SampleSpecular(r, s_)
+                                      : SampleDiffuse(n);
+  }
+
+  float Pdf(const glm::vec3 &n, const glm::vec3 &w_i,
+            const glm::vec3 &w_o) const override {
+    using namespace glm;
+    const auto t = ProbSpecular();
+    const auto r = reflect(-w_o, n);
+    return (1 - t) * max(0.f, dot(n, w_i)) * one_over_pi +
+           t * (s_ + 1) * Material::one_over_two_pi *
+               pow(max(0.f, dot(r, w_i)), s_);
   }
 
   friend bool operator==(const Phong &x, const Phong &y) {
@@ -40,6 +45,11 @@ class Phong : public Material {
   friend bool operator!=(const Phong &x, const Phong &y) { return !(x == y); }
 
  private:
+  float ProbSpecular() const {
+    using namespace glm;
+    return compMax(k_s_) / compMax(k_d_ + k_s_);
+  }
+
   glm::vec3 SampleSpecular(const glm::vec3 &r, const float s) const {
     using namespace glm;
     const auto xi_1 = Random(), xi_2 = Random();

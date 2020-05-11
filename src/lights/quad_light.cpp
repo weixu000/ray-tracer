@@ -25,7 +25,8 @@ std::optional<LightEmission> QuadLight::Hit(const Ray &ray) const {
   const auto u = res[0], v = res[1], t = res[2];
 
   if (u >= 0 && u <= 1 && v >= 0 && v <= 1 && t >= 0) {
-    return LightEmission{t, radiance_};
+    return LightEmission{t, dot(d, normal_) > 0 ? radiance_ : vec3{0.f},
+                         normal_, area_};
   } else {
     return std::nullopt;
   }

@@ -28,17 +28,21 @@ class GGX : public Material {
     return DiffuseBrdf() + ggx;
   }
 
-  std::tuple<glm::vec3, float> SampleBrdf(const glm::vec3 &n,
-                                          const glm::vec3 &w_o) const override {
+  glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_o) const override {
     using namespace glm;
 
-    const auto t = max(.25f, compMax(k_s_) / compMax(k_d_ + k_s_));
-    const auto w_i = Random() <= t ? SampleSpecular(n, w_o) : SampleDiffuse(n);
+    return Random() <= ProbSpecular() ? SampleSpecular(n, w_o)
+                                      : SampleDiffuse(n);
+  }
+
+  float Pdf(const glm::vec3 &n, const glm::vec3 &w_i,
+            const glm::vec3 &w_o) const override {
+    using namespace glm;
+    const auto t = ProbSpecular();
     const auto h = normalize(w_i + w_o);
     const auto h_n = dot(h, n);
-    const auto pdf = (1 - t) * max(0.f, dot(n, w_i)) * one_over_pi +
-                     t * D(h_n) * h_n / (4 * dot(h, w_i));
-    return std::make_tuple(w_i, pdf);
+    return (1 - t) * max(0.f, dot(n, w_i)) * one_over_pi +
+           t * D(h_n) * h_n / (4 * dot(h, w_i));
   }
 
   friend bool operator==(const GGX &x, const GGX &y) {
@@ -48,6 +52,11 @@ class GGX : public Material {
   friend bool operator!=(const GGX &x, const GGX &y) { return !(x == y); }
 
  private:
+  float ProbSpecular() const {
+    using namespace glm;
+    return max(.25f, compMax(k_s_) / compMax(k_d_ + k_s_));
+  }
+
   float D(float h_n) const {
     return pow(alpha_, 2) /
            (pi * pow(h_n, 4) * pow(pow(alpha_, 2) + 1 / pow(h_n, 2) - 1, 2));
