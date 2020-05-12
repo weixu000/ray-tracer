@@ -27,6 +27,8 @@ class Scene {
         return phong[material.id].Brdf(std::forward<Args>(args)...);
       case BRDF::GGX:
         return ggx[material.id].Brdf(std::forward<Args>(args)...);
+      default:
+        throw;
     }
   }
 
@@ -37,6 +39,9 @@ class Scene {
         return phong[material.id].Sample(std::forward<Args>(args)...);
       case BRDF::GGX:
         return ggx[material.id].Sample(std::forward<Args>(args)...);
+
+      default:
+        throw;
     }
   }
 
@@ -47,6 +52,8 @@ class Scene {
         return phong[material.id].Pdf(std::forward<Args>(args)...);
       case BRDF::GGX:
         return ggx[material.id].Pdf(std::forward<Args>(args)...);
+      default:
+        throw;
     }
   }
 };
