@@ -161,30 +161,23 @@ auto LoadCamera(const Options &options) {
   return Camera(look_from, look_at, up, fov, width, height);
 }
 
-template <Sampling sampling, bool mis, typename T>
+template <Sampling sampling, bool mis, template <auto...> typename T>
 using Entry =
     RegistryFactory<Integrator, Sampling, bool>::Entry<sampling, mis, T>;
 template <typename... Ts>
 using Registry = RegistryFactory<Integrator, Sampling, bool>::Registry<Ts...>;
-
-using RegistryNEE = Registry<
-    Entry<Sampling::Hemisphere, false,
-          PathTracerNEE<Sampling::Hemisphere, false>>,
-    Entry<Sampling::Cosine, false, PathTracerNEE<Sampling::Cosine, false>>,
-    Entry<Sampling::BRDF, false, PathTracerNEE<Sampling::BRDF, false>>,
-    Entry<Sampling::Hemisphere, true,
-          PathTracerNEE<Sampling::Hemisphere, true>>,
-    Entry<Sampling::Cosine, true, PathTracerNEE<Sampling::Cosine, true>>,
-    Entry<Sampling::BRDF, true, PathTracerNEE<Sampling::BRDF, true>>>;
-
-using RegistryRR = Registry<
-    Entry<Sampling::Hemisphere, false,
-          PathTracerRR<Sampling::Hemisphere, false>>,
-    Entry<Sampling::Cosine, false, PathTracerRR<Sampling::Cosine, false>>,
-    Entry<Sampling::BRDF, false, PathTracerRR<Sampling::BRDF, false>>,
-    Entry<Sampling::Hemisphere, true, PathTracerRR<Sampling::Hemisphere, true>>,
-    Entry<Sampling::Cosine, true, PathTracerRR<Sampling::Cosine, true>>,
-    Entry<Sampling::BRDF, true, PathTracerRR<Sampling::BRDF, true>>>;
+using RegistryNEE = Registry<Entry<Sampling::Hemisphere, false, PathTracerNEE>,
+                             Entry<Sampling::Cosine, false, PathTracerNEE>,
+                             Entry<Sampling::BRDF, false, PathTracerNEE>,
+                             Entry<Sampling::Hemisphere, true, PathTracerNEE>,
+                             Entry<Sampling::Cosine, true, PathTracerNEE>,
+                             Entry<Sampling::BRDF, true, PathTracerNEE>>;
+using RegistryRR = Registry<Entry<Sampling::Hemisphere, false, PathTracerRR>,
+                            Entry<Sampling::Cosine, false, PathTracerRR>,
+                            Entry<Sampling::BRDF, false, PathTracerRR>,
+                            Entry<Sampling::Hemisphere, true, PathTracerRR>,
+                            Entry<Sampling::Cosine, true, PathTracerRR>,
+                            Entry<Sampling::BRDF, true, PathTracerRR>>;
 
 template <typename C, typename K, typename V>
 V GetDefault(const C &m, const K &key, const V &defval) {
@@ -203,7 +196,6 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
     if (GetDefault(options, "nexteventestimation", "off"s) == "off") {
       throw std::runtime_error("Simple path tracer removed");
     }
-
     const auto mis =
         GetDefault(options, "nexteventestimation", "off"s) == "mis";
     const auto russian_roulette =

@@ -4,9 +4,9 @@
 
 template <typename Base, typename... EntryArgs>
 struct RegistryFactory {
-  template <EntryArgs... args, typename T>
+  template <EntryArgs... args, template <auto...> typename T>
   struct Entry {
-    using Type = T;
+    using Type = T<args...>;
     static bool Match(EntryArgs... params) { return ((args == params) && ...); }
   };
 
