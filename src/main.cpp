@@ -52,7 +52,6 @@ MaterialRef AddMaterial(vector<Material> &materials, Args... args) {
 auto LoadScene(ifstream &fs) {
   Scene scene;
   Options others;
-  vector<unique_ptr<const Shape>> shapes;
   vector<vec3> verts;
   vector<mat4> transform_stack;
   vec3 k_d, k_s;
@@ -74,7 +73,7 @@ auto LoadScene(ifstream &fs) {
       const auto mat = use_ggx
                            ? AddMaterial<BRDF::GGX>(scene.ggx, alpha, k_d, k_s)
                            : AddMaterial<BRDF::Phong>(scene.phong, s, k_d, k_s);
-      shapes.emplace_back(make_unique<Sphere>(
+      scene.shapes.emplace_back(make_unique<Sphere>(
           position, rad, StackMatrices(transform_stack), mat));
     } else if (command == "maxverts") {
       continue;  // Not used
@@ -88,9 +87,9 @@ auto LoadScene(ifstream &fs) {
       const auto mat = use_ggx
                            ? AddMaterial<BRDF::GGX>(scene.ggx, alpha, k_d, k_s)
                            : AddMaterial<BRDF::Phong>(scene.phong, s, k_d, k_s);
-      shapes.emplace_back(make_unique<Triangle>(StackMatrices(transform_stack),
-                                                verts[t[0]], verts[t[1]],
-                                                verts[t[2]], mat));
+      scene.shapes.emplace_back(
+          make_unique<Triangle>(StackMatrices(transform_stack), verts[t[0]],
+                                verts[t[1]], verts[t[2]], mat));
     } else if (command == "maxvertnorms") {
       continue;  // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {
@@ -142,8 +141,6 @@ auto LoadScene(ifstream &fs) {
       others[command] = option;
     }
   }
-  scene.group = move(BVH(move(shapes)));
-
   return make_tuple<Scene, Options>(move(scene), move(others));
 }
 
@@ -189,13 +186,13 @@ V GetDefault(const C &m, const K &key, const V &defval) {
   return ret;
 }
 
-unique_ptr<Integrator> LoadIntegrator(const Options &options,
-                                      const Scene &scene,
-                                      const Camera &camera) {
+unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
+                                      Camera camera) {
   if (options.at("integrator") == "pathtracer") {
     if (GetDefault(options, "nexteventestimation", "off"s) == "off") {
       throw std::runtime_error("Simple path tracer removed");
     }
+
     const auto mis =
         GetDefault(options, "nexteventestimation", "off"s) == "mis";
     const auto russian_roulette =
@@ -215,11 +212,11 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options,
     }
 
     if (russian_roulette) {
-      return RegistryRR::Get(importance_sampling, mis, spp, scene, camera,
-                             gamma);
+      return RegistryRR::Get(importance_sampling, mis, spp, std::move(scene),
+                             std::move(camera), gamma);
     } else {
-      return RegistryNEE::Get(importance_sampling, mis, max_depth, spp, scene,
-                              camera, gamma);
+      return RegistryNEE::Get(importance_sampling, mis, max_depth, spp,
+                              std::move(scene), std::move(camera), gamma);
     }
   } else {
     throw std::runtime_error("Unknown integrator: " + options.at("integrator"));
@@ -238,9 +235,10 @@ int main(int argc, char **argv) {
   }
   cout << "Parsing: " << input_path << endl;
 
-  const auto [scene, options] = LoadScene(fs);
-  const auto camera = LoadCamera(options);
-  const auto integrator = LoadIntegrator(options, scene, camera);
+  auto [scene, options] = LoadScene(fs);
+  auto camera = LoadCamera(options);
+  const auto integrator =
+      LoadIntegrator(options, std::move(scene), std::move(camera));
 
   istringstream ss;
   string output_file;
