@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "integrators/path_integrator.hpp"
+#include "integrators/path_tracer.hpp"
 #include "lights/quad_light.hpp"
 #include "registry_factory.hpp"
 #include "shapes/sphere.hpp"
@@ -169,22 +169,22 @@ using Registry = RegistryFactory<Integrator, Sampling, bool>::Registry<Ts...>;
 
 using RegistryNEE = Registry<
     Entry<Sampling::Hemisphere, false,
-          IntegratorNEE<Sampling::Hemisphere, false>>,
-    Entry<Sampling::Cosine, false, IntegratorNEE<Sampling::Cosine, false>>,
-    Entry<Sampling::BRDF, false, IntegratorNEE<Sampling::BRDF, false>>,
+          PathTracerNEE<Sampling::Hemisphere, false>>,
+    Entry<Sampling::Cosine, false, PathTracerNEE<Sampling::Cosine, false>>,
+    Entry<Sampling::BRDF, false, PathTracerNEE<Sampling::BRDF, false>>,
     Entry<Sampling::Hemisphere, true,
-          IntegratorNEE<Sampling::Hemisphere, true>>,
-    Entry<Sampling::Cosine, true, IntegratorNEE<Sampling::Cosine, true>>,
-    Entry<Sampling::BRDF, true, IntegratorNEE<Sampling::BRDF, true>>>;
+          PathTracerNEE<Sampling::Hemisphere, true>>,
+    Entry<Sampling::Cosine, true, PathTracerNEE<Sampling::Cosine, true>>,
+    Entry<Sampling::BRDF, true, PathTracerNEE<Sampling::BRDF, true>>>;
 
 using RegistryRR = Registry<
     Entry<Sampling::Hemisphere, false,
-          IntegratorRR<Sampling::Hemisphere, false>>,
-    Entry<Sampling::Cosine, false, IntegratorRR<Sampling::Cosine, false>>,
-    Entry<Sampling::BRDF, false, IntegratorRR<Sampling::BRDF, false>>,
-    Entry<Sampling::Hemisphere, true, IntegratorRR<Sampling::Hemisphere, true>>,
-    Entry<Sampling::Cosine, true, IntegratorRR<Sampling::Cosine, true>>,
-    Entry<Sampling::BRDF, true, IntegratorRR<Sampling::BRDF, true>>>;
+          PathTracerRR<Sampling::Hemisphere, false>>,
+    Entry<Sampling::Cosine, false, PathTracerRR<Sampling::Cosine, false>>,
+    Entry<Sampling::BRDF, false, PathTracerRR<Sampling::BRDF, false>>,
+    Entry<Sampling::Hemisphere, true, PathTracerRR<Sampling::Hemisphere, true>>,
+    Entry<Sampling::Cosine, true, PathTracerRR<Sampling::Cosine, true>>,
+    Entry<Sampling::BRDF, true, PathTracerRR<Sampling::BRDF, true>>>;
 
 template <typename C, typename K, typename V>
 V GetDefault(const C &m, const K &key, const V &defval) {

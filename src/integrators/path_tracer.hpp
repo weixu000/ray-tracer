@@ -9,16 +9,16 @@
 enum class Sampling { Hemisphere, Cosine, BRDF };
 
 template <bool russian_roulette, Sampling sampling, bool mis>
-class PathIntegrator : public Integrator {
+class PathTracer : public Integrator {
  public:
   template <bool T = russian_roulette, typename... Args>
-  PathIntegrator(std::enable_if_t<T, int> num_pixel_sample, Args&&... args)
+  PathTracer(std::enable_if_t<T, int> num_pixel_sample, Args&&... args)
       : Integrator(std::forward<Args>(args)...),
         num_pixel_sample_(num_pixel_sample) {}
 
   template <bool T = !russian_roulette, typename... Args>
-  PathIntegrator(std::enable_if_t<T, int> max_depth, int num_pixel_sample,
-                 Args&&... args)
+  PathTracer(std::enable_if_t<T, int> max_depth, int num_pixel_sample,
+             Args&&... args)
       : Integrator(std::forward<Args>(args)...),
         num_pixel_sample_(num_pixel_sample),
         max_depth_(max_depth) {}
@@ -34,21 +34,21 @@ class PathIntegrator : public Integrator {
 
   glm::vec3 Sample(const Ray& ray) const;
 
+  glm::vec3 SampleBrdf(const MaterialRef& mat, const glm::vec3& n,
+                       const glm::vec3& w_o) const;
+  float PdfBrdf(const MaterialRef& mat, const glm::vec3& n,
+                const glm::vec3& w_i, const glm::vec3& w_o) const;
+
   glm::vec3 LightIndirect(
       const glm::vec3& x, const glm::vec3& n, const glm::vec3& w_o,
-      const MaterialRef& material,
+      const MaterialRef& mat,
       std::conditional_t<russian_roulette, const glm::vec3&, int>
           throughput_or_depth) const;
 
-  glm::vec3 SampleBrdf(const MaterialRef& material, const glm::vec3& n,
-                       const glm::vec3& w_o) const;
-  float PdfBrdf(const MaterialRef& material, const glm::vec3& n,
-                const glm::vec3& w_i, const glm::vec3& w_o) const;
-
-  float PdfLight(const glm::vec3& x, const glm::vec3& w_i) const;
-
   glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,
                         const glm::vec3& w_o, const MaterialRef& mat) const;
+
+  float PdfLight(const glm::vec3& x, const glm::vec3& w_i) const;
 
   template <bool brdf, bool T = mis>
   std::enable_if_t<T, glm::vec3> MISSample(const glm::vec3& x,
@@ -62,8 +62,8 @@ class PathIntegrator : public Integrator {
 };
 
 template <Sampling sampling, bool mis>
-using IntegratorNEE = PathIntegrator<false, sampling, mis>;
+using PathTracerNEE = PathTracer<false, sampling, mis>;
 template <Sampling sampling, bool mis>
-using IntegratorRR = PathIntegrator<true, sampling, mis>;
+using PathTracerRR = PathTracer<true, sampling, mis>;
 
-#include "path_integrator.inc"
+#include "path_tracer.inc"

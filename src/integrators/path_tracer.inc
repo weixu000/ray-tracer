@@ -7,7 +7,7 @@
 #include "../samplers/random.hpp"
 
 template <bool russian_roulette, Sampling sampling, bool mis>
-glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::Sample(
+glm::vec3 PathTracer<russian_roulette, sampling, mis>::Sample(
     const Ray &ray) const {
   using namespace glm;
 
@@ -27,9 +27,8 @@ glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::Sample(
 }
 
 template <bool russian_roulette, Sampling sampling, bool mis>
-glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::SampleBrdf(
-    const MaterialRef &material, const glm::vec3 &n,
-    const glm::vec3 &w_o) const {
+glm::vec3 PathTracer<russian_roulette, sampling, mis>::SampleBrdf(
+    const MaterialRef &mat, const glm::vec3 &n, const glm::vec3 &w_o) const {
   switch (sampling) {
     case Sampling::Hemisphere: {
       static HemisphereSampler sampler;
@@ -40,13 +39,13 @@ glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::SampleBrdf(
       return sampler.Sample(n);
     }
     case Sampling::BRDF:
-      return scene_.Sample(material, n, w_o);
+      return scene_.Sample(mat, n, w_o);
   }
 }
 
 template <bool russian_roulette, Sampling sampling, bool mis>
-float PathIntegrator<russian_roulette, sampling, mis>::PdfBrdf(
-    const MaterialRef &material, const glm::vec3 &n, const glm::vec3 &w_i,
+float PathTracer<russian_roulette, sampling, mis>::PdfBrdf(
+    const MaterialRef &mat, const glm::vec3 &n, const glm::vec3 &w_i,
     const glm::vec3 &w_o) const {
   switch (sampling) {
     case Sampling::Hemisphere: {
@@ -58,14 +57,14 @@ float PathIntegrator<russian_roulette, sampling, mis>::PdfBrdf(
       return sampler.Pdf(n, w_i);
     }
     case Sampling::BRDF:
-      return scene_.Pdf(material, n, w_i, w_o);
+      return scene_.Pdf(mat, n, w_i, w_o);
   }
 }
 
 template <bool russian_roulette, Sampling sampling, bool mis>
-glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::LightIndirect(
+glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
     const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_o,
-    const MaterialRef &material,
+    const MaterialRef &mat,
     std::conditional_t<russian_roulette, const glm::vec3 &, int>
         throughput_or_depth) const {
   using namespace glm;
@@ -82,8 +81,8 @@ glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::LightIndirect(
     }
   }
 
-  const auto w_i = SampleBrdf(material, n, w_o);
-  const auto pdf = PdfBrdf(material, n, w_i, w_o);
+  const auto w_i = SampleBrdf(mat, n, w_o);
+  const auto pdf = PdfBrdf(mat, n, w_i, w_o);
   if (dot(w_i, n) <= 0 || pdf == 0) return vec3{0.f};
   const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
 
@@ -92,7 +91,7 @@ glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::LightIndirect(
       [&](const RayHit &hit) {
         const auto x_i = ray_i(hit.t), n_i = hit.n;
         if constexpr (russian_roulette) {
-          const auto throughput_RR = scene_.Brdf(material, n, w_i, w_o) *
+          const auto throughput_RR = scene_.Brdf(mat, n, w_i, w_o) *
                                      max(0.f, dot(n, w_i)) / pdf *
                                      throughput_or_depth / (1 - q);
           return LightDirect(x_i, n_i, -w_i, hit.mat) * throughput_RR +
@@ -101,14 +100,14 @@ glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::LightIndirect(
           const auto L =
               LightDirect(x_i, n_i, -w_i, hit.mat) +
               LightIndirect(x_i, n_i, -w_i, hit.mat, throughput_or_depth - 1);
-          return L * scene_.Brdf(material, n, w_i, w_o) *
-                 max(0.f, dot(n, w_i)) / pdf;
+          return L * scene_.Brdf(mat, n, w_i, w_o) * max(0.f, dot(n, w_i)) /
+                 pdf;
         }
       });
 }
 
 template <bool russian_roulette, Sampling sampling, bool mis>
-float PathIntegrator<russian_roulette, sampling, mis>::PdfLight(
+float PathTracer<russian_roulette, sampling, mis>::PdfLight(
     const glm::vec3 &x, const glm::vec3 &w_i) const {
   using namespace glm;
 
@@ -125,7 +124,7 @@ float PathIntegrator<russian_roulette, sampling, mis>::PdfLight(
 template <bool russian_roulette, Sampling sampling, bool mis>
 template <bool brdf, bool T>
 std::enable_if_t<T, glm::vec3>
-PathIntegrator<russian_roulette, sampling, mis>::MISSample(
+PathTracer<russian_roulette, sampling, mis>::MISSample(
     const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_i,
     const glm::vec3 &w_o, const MaterialRef &mat) const {
   using namespace glm;
@@ -137,22 +136,18 @@ PathIntegrator<russian_roulette, sampling, mis>::MISSample(
       const auto pdf = brdf ? PdfBrdf(mat, n, w_i, w_o) : PdfLight(x, w_i);
       const auto other_pdf =
           !brdf ? PdfBrdf(mat, n, w_i, w_o) : PdfLight(x, w_i);
-      if (dot(w_i, n) <= 0 || pdf == 0) return vec3{0.f};
+      if (pdf == 0) return vec3{0.f};
       const auto w = float(pow(pdf, 2) / (pow(pdf, 2) + pow(other_pdf, 2)));
-      const auto f =
-          light_hit->L_e * scene_.Brdf(mat, n, w_i, w_o) * dot(n, w_i);
-      if constexpr (brdf) {
-        return f * w / pdf;
-      } else {
-        return f * w / pdf / float(scene_.lights.size());
-      }
+      const auto f = light_hit->L_e * scene_.Brdf(mat, n, w_i, w_o) *
+                     max(0.f, dot(n, w_i));
+      return f * w / pdf;
     }
   }
   return vec3{0.f};
 }
 
 template <bool russian_roulette, Sampling sampling, bool mis>
-glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::LightDirect(
+glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightDirect(
     const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_o,
     const MaterialRef &mat) const {
   using namespace glm;
@@ -162,9 +157,9 @@ glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::LightDirect(
   if constexpr (mis) {
     radiance += MISSample<true>(x, n, SampleBrdf(mat, n, w_o), w_o, mat);
     for (const auto &light : scene_.lights) {
-      const auto sample = light->Sample();
-      const auto w_i = normalize(sample - x);
-      radiance += MISSample<false>(x, n, w_i, w_o, mat);
+      const auto w_i = normalize(light->Sample() - x);
+      radiance +=
+          MISSample<false>(x, n, w_i, w_o, mat) / float(scene_.lights.size());
     }
   } else {
     for (const auto &light : scene_.lights) {
@@ -176,9 +171,8 @@ glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::LightDirect(
         if (const auto shadow_hit = scene_.TraceShapes(ray_i);
             !shadow_hit || shadow_hit->t > light_hit->t) {
           const auto n_l = light_hit->n;
-          const auto w_i_n = dot(w_i, n), w_i_n_l = dot(w_i, n_l);
-          if (w_i_n < 0 || w_i_n_l < 0) continue;
-          const auto G = w_i_n * w_i_n_l / length2(sample - x);
+          const auto G = max(0.f, dot(w_i, n)) * max(0.f, dot(w_i, n_l)) /
+                         length2(sample - x);
           radiance += light_hit->L_e * light_hit->jacobian *
                       scene_.Brdf(mat, n, w_i, w_o) * G;
         }
