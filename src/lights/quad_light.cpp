@@ -1,5 +1,7 @@
 #include "quad_light.hpp"
 
+#include "../samplers/sampler.hpp"
+
 using namespace glm;
 
 QuadLight::QuadLight(const glm::vec3 &radiance, const glm::vec3 &v0,
@@ -9,14 +11,14 @@ QuadLight::QuadLight(const glm::vec3 &radiance, const glm::vec3 &v0,
   v_[1] = v0 + e1;
   v_[2] = v_[1] + e2;
   v_[3] = v0 + e2;
-  normal_ = cross(e1, e2);
-  area_ = length(normal_);
+  normal_ = normalize(cross(e1, e2));
+  area_ = length(cross(e1, e2));
 }
 
-LightSample QuadLight::GetSample(const glm::vec3 &x,
-                                 const glm::vec2 &uv) const {
+glm::vec3 QuadLight::Sample() const {
+  const auto uv = SampleSquare();
   const auto p = v0_ + uv.x * e1_ + uv.y * e2_;
-  return LightSample{p, radiance_, normal_, area_, length(p - x)};
+  return p;
 }
 
 std::optional<LightEmission> QuadLight::Hit(const Ray &ray) const {
@@ -26,7 +28,7 @@ std::optional<LightEmission> QuadLight::Hit(const Ray &ray) const {
 
   if (u >= 0 && u <= 1 && v >= 0 && v <= 1 && t >= 0) {
     return LightEmission{t, dot(d, normal_) > 0 ? radiance_ : vec3{0.f},
-                         normal_, area_};
+                         normal_, area_, this};
   } else {
     return std::nullopt;
   }

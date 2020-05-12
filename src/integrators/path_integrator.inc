@@ -116,8 +116,7 @@ float PathIntegrator<russian_roulette, sampling, mis>::PdfLight(
   auto pdf = 0.f;
   for (const auto &light : scene_.lights) {
     if (const auto hit = light->Hit(ray)) {
-      pdf += length2(ray(hit->distance) - x) /
-             (hit->jacobian * abs(dot(w_i, normalize(hit->normal))));
+      pdf += length2(ray(hit->t) - x) / (hit->jacobian * abs(dot(w_i, hit->n)));
     }
   }
   return pdf / scene_.lights.size();
@@ -134,7 +133,7 @@ PathIntegrator<russian_roulette, sampling, mis>::MISSample(
   const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
   if (const auto light_hit = scene_.TraceLights(ray_i)) {
     if (const auto shadow_hit = scene_.TraceShapes(ray_i);
-        !shadow_hit || shadow_hit->t > light_hit->distance) {
+        !shadow_hit || shadow_hit->t > light_hit->t) {
       const auto pdf = brdf ? PdfBrdf(mat, n, w_i, w_o) : PdfLight(x, w_i);
       const auto other_pdf =
           !brdf ? PdfBrdf(mat, n, w_i, w_o) : PdfLight(x, w_i);
@@ -163,22 +162,26 @@ glm::vec3 PathIntegrator<russian_roulette, sampling, mis>::LightDirect(
   if constexpr (mis) {
     radiance += MISSample<true>(x, n, SampleBrdf(mat, n, w_o), w_o, mat);
     for (const auto &light : scene_.lights) {
-      const auto sample = light->GetSample(x, SampleSquare());
-      const auto w_i = normalize(sample.light - x);
+      const auto sample = light->Sample();
+      const auto w_i = normalize(sample - x);
       radiance += MISSample<false>(x, n, w_i, w_o, mat);
     }
   } else {
     for (const auto &light : scene_.lights) {
-      const auto sample = light->GetSample(x, SampleSquare());
-      const auto w_i = normalize(sample.light - x);
-      const auto n_l = normalize(sample.normal);
-      const auto w_i_n = dot(w_i, n), w_i_n_l = dot(w_i, n_l);
-      if (w_i_n < 0 || w_i_n_l < 0) continue;
-      if (const auto shadow_hit = scene_.TraceShapes(sample.GetShadowRay(x));
-          !shadow_hit || shadow_hit->t > sample.distance) {
-        const auto G = w_i_n * w_i_n_l / length2(sample.light - x);
-        radiance += sample.radiance * sample.jacobian *
-                    scene_.Brdf(mat, n, w_i, w_o) * G;
+      const auto sample = light->Sample();
+      const auto w_i = normalize(sample - x);
+      const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
+      if (const auto light_hit = scene_.TraceLights(ray_i);
+          light_hit && light_hit->light == light.get()) {
+        if (const auto shadow_hit = scene_.TraceShapes(ray_i);
+            !shadow_hit || shadow_hit->t > light_hit->t) {
+          const auto n_l = light_hit->n;
+          const auto w_i_n = dot(w_i, n), w_i_n_l = dot(w_i, n_l);
+          if (w_i_n < 0 || w_i_n_l < 0) continue;
+          const auto G = w_i_n * w_i_n_l / length2(sample - x);
+          radiance += light_hit->L_e * light_hit->jacobian *
+                      scene_.Brdf(mat, n, w_i, w_o) * G;
+        }
       }
     }
   }

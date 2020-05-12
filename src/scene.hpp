@@ -57,8 +57,7 @@ class Scene {
   std::optional<LightEmission> TraceLights(const Ray &ray) const {
     std::optional<LightEmission> ret;
     for (const auto &light : lights) {
-      if (const auto hit = light->Hit(ray);
-          hit && (!ret || hit->distance < ret->distance)) {
+      if (const auto hit = light->Hit(ray); hit && (!ret || hit->t < ret->t)) {
         ret = hit;
       }
     }
@@ -70,7 +69,7 @@ class Scene {
                   const glm::vec3 &default_val = glm::vec3(0.f)) const {
     const auto light_hit = TraceLights(ray);
     const auto shape_hit = TraceShapes(ray);
-    if (shape_hit && (!light_hit || shape_hit->t < light_hit->distance)) {
+    if (shape_hit && (!light_hit || shape_hit->t < light_hit->t)) {
       return if_shape(*shape_hit);
     } else if (light_hit) {
       return if_light(*light_hit);

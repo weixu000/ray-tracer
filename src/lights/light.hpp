@@ -5,36 +5,24 @@
 
 #include "../ray.hpp"
 
-/**
- * Local light information returned by Light::GetSample
- */
-struct LightSample {
-  glm::vec3 light;
-  glm::vec3 radiance, normal;
-  float jacobian;  // jacobian determinant
-  float distance;
-
-  Ray GetShadowRay(const glm::vec3 &x) const {
-    const auto d = glm::normalize(light - x);
-    return Ray{x + d * SHADOW_EPSILON, d};
-  }
-};
+class Light;
 
 /**
  * Emitted light returned by Light::Hit
+ * Light normal is normalized
  */
 struct LightEmission {
-  float distance;
-  glm::vec3 L_e, normal;
+  float t;
+  glm::vec3 L_e, n;
   float jacobian;  // jacobian determinant
+  const Light *light;
 };
 
 class Light {
  public:
   virtual ~Light() = default;
 
-  virtual LightSample GetSample(const glm::vec3 &x,
-                                const glm::vec2 &uv) const = 0;
+  virtual glm::vec3 Sample() const = 0;
 
   /**
    * Test if the ray hit the light and should draw L_e
