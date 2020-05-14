@@ -2,8 +2,6 @@
 
 #include <glm/gtx/component_wise.hpp>
 
-#include "../samplers/random.hpp"
-#include "../samplers/sampler.hpp"
 #include "material.hpp"
 
 class Phong : public Material {
@@ -17,7 +15,7 @@ class Phong : public Material {
 
     const auto r = reflect(-w_o, n);
     return DiffuseBrdf() +
-           k_s_ * (s_ + 2) / 2.f * pow(max(0.f, dot(r, w_i)), s_) * one_over_pi;
+           k_s_ * (s_ + 2) / 2.f * pow(max(0.f, dot(r, w_i)), s_) * ONE_OVER_PI;
   }
 
   glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_o) const override {
@@ -33,9 +31,8 @@ class Phong : public Material {
     using namespace glm;
     const auto t = ProbSpecular();
     const auto r = reflect(-w_o, n);
-    return (1 - t) * max(0.f, dot(n, w_i)) * one_over_pi +
-           t * (s_ + 1) * Material::one_over_two_pi *
-               pow(max(0.f, dot(r, w_i)), s_);
+    return (1 - t) * max(0.f, dot(n, w_i)) * ONE_OVER_PI +
+           t * (s_ + 1) * TWO_OVER_PI * pow(max(0.f, dot(r, w_i)), s_);
   }
 
   friend bool operator==(const Phong &x, const Phong &y) {
@@ -53,8 +50,7 @@ class Phong : public Material {
   glm::vec3 SampleSpecular(const glm::vec3 &r, const float s) const {
     using namespace glm;
     const auto xi_1 = Random(), xi_2 = Random();
-    const auto theta = acos(pow(xi_1, 1 / (s + 1))),
-               phi = Material::two_pi * xi_2;
+    const auto theta = acos(pow(xi_1, 1 / (s + 1))), phi = TWO_PI * xi_2;
     return ConvertSpherical(theta, phi, r);
   }
 

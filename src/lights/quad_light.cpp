@@ -1,6 +1,6 @@
 #include "quad_light.hpp"
 
-#include "../samplers/sampler.hpp"
+#include "../samplers/sampling.hpp"
 
 using namespace glm;
 
@@ -16,8 +16,7 @@ QuadLight::QuadLight(const glm::vec3 &radiance, const glm::vec3 &v0,
 }
 
 glm::vec3 QuadLight::Sample() const {
-  const auto uv = SampleSquare();
-  const auto p = v0_ + uv.x * e1_ + uv.y * e2_;
+  const auto p = v0_ + Random() * e1_ + Random() * e2_;
   return p;
 }
 

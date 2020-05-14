@@ -1,7 +1,8 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
+
+#include "../samplers/sampling.hpp"
 
 class Material {
  public:
@@ -18,19 +19,14 @@ class Material {
                     const glm::vec3 &w_o) const = 0;
 
  protected:
-  glm::vec3 DiffuseBrdf() const { return k_d_ * one_over_pi; }
+  glm::vec3 DiffuseBrdf() const { return k_d_ * ONE_OVER_PI; }
 
   glm::vec3 SampleDiffuse(const glm::vec3 &n) const {
     using namespace glm;
     const auto xi_1 = Random(), xi_2 = Random();
-    const auto theta = acos(sqrt(xi_1)), phi = two_pi * xi_2;
+    const auto theta = acos(sqrt(xi_1)), phi = TWO_PI * xi_2;
     return ConvertSpherical(theta, phi, n);
   }
 
   glm::vec3 k_d_, k_s_;
-
-  static constexpr auto pi = glm::pi<float>();
-  static constexpr auto two_pi = glm::two_pi<float>();
-  static constexpr auto one_over_pi = glm::one_over_pi<float>();
-  static constexpr auto one_over_two_pi = glm::one_over_two_pi<float>();
 };

@@ -4,7 +4,7 @@
 #include <glm/gtx/norm.hpp>
 #include <vector>
 
-#include "../samplers/random.hpp"
+#include "../samplers/sampling.hpp"
 
 template <bool russian_roulette, Sampling sampling, bool mis>
 glm::vec3 PathTracer<russian_roulette, sampling, mis>::Sample(

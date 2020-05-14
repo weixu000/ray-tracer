@@ -2,8 +2,6 @@
 
 #include <glm/gtx/component_wise.hpp>
 
-#include "../samplers/random.hpp"
-#include "../samplers/sampler.hpp"
 #include "material.hpp"
 
 class GGX : public Material {
@@ -41,7 +39,7 @@ class GGX : public Material {
     const auto t = ProbSpecular();
     const auto h = normalize(w_i + w_o);
     const auto h_n = dot(h, n);
-    return (1 - t) * max(0.f, dot(n, w_i)) * one_over_pi +
+    return (1 - t) * max(0.f, dot(n, w_i)) * ONE_OVER_PI +
            t * D(h_n) * h_n / (4 * dot(h, w_i));
   }
 
@@ -59,7 +57,7 @@ class GGX : public Material {
 
   float D(float h_n) const {
     return pow(alpha_, 2) /
-           (pi * pow(h_n, 4) * pow(pow(alpha_, 2) + 1 / pow(h_n, 2) - 1, 2));
+           (PI * pow(h_n, 4) * pow(pow(alpha_, 2) + 1 / pow(h_n, 2) - 1, 2));
   }
 
   float G(float v_n) const {
@@ -70,7 +68,7 @@ class GGX : public Material {
     using namespace glm;
     const auto xi_1 = Random(), xi_2 = Random();
     const auto theta = atan(alpha_ * sqrt(xi_1 / (1 - xi_1))),
-               phi = two_pi * xi_2;
+               phi = TWO_PI * xi_2;
     const auto h = ConvertSpherical(theta, phi, n);
     return reflect(-w_o, h);
   }

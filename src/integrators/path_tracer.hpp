@@ -27,7 +27,8 @@ class PathTracer : public Integrator {
   glm::vec3 ShadePixel(const glm::vec2& pixel) const override {
     auto radiance = glm::vec3(0.f);
     for (int i = 0; i < num_pixel_sample_; ++i) {
-      radiance += Sample(camera_.GenerateEyeRay(pixel + SampleSquare()));
+      radiance +=
+          Sample(camera_.GenerateEyeRay(pixel + glm::vec2{Random(), Random()}));
     }
     return radiance / float(num_pixel_sample_);
   }
