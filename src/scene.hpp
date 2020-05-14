@@ -11,7 +11,8 @@
 #include "shapes/shape.hpp"
 
 /**
- * Hold primitives and lights
+ * Hold primitives, lights, materials
+ * Dispatch calls to different types of materials
  */
 class Scene {
  public:

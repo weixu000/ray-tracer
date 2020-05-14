@@ -33,8 +33,10 @@ class PathTracer : public Integrator {
     return radiance / float(num_pixel_sample_);
   }
 
+  /**
+   * Dispatch calls to different types of importance sampling
+   */
   glm::vec3 Sample(const Ray& ray) const;
-
   glm::vec3 SampleBrdf(const MaterialRef& mat, const glm::vec3& n,
                        const glm::vec3& w_o) const;
   float PdfBrdf(const MaterialRef& mat, const glm::vec3& n,

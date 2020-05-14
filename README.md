@@ -9,11 +9,14 @@ URL to image-grader:
 - HW3:
     - https://lifan.s3.amazonaws.com/homework3a/3e15c0ae2494fb5f5c77d3af7538caea/20200503221630/index.html
     - https://lifan.s3.amazonaws.com/homework3b/3e15c0ae2494fb5f5c77d3af7538caea/20200430003049/index.html
+- HW4
+    - https://lifan.s3.amazonaws.com/homework4a/3e15c0ae2494fb5f5c77d3af7538caea/20200514220909/index.html
+    - https://lifan.s3.amazonaws.com/homework4b/3e15c0ae2494fb5f5c77d3af7538caea/20200514220448/index.html
 
 # Compilation Instructions
 - Use CMake to build
     - C++ 17 may be required
-    - I tested on Windows with MinGW-w64 or MSVC 2019
+    - I tested with GCC 9.3 or MSVC 2019
 - `/externs` contains 3rd-party libraries
     - `stb-cmake` for image output
 
@@ -24,9 +27,7 @@ In `bvh.hpp` and `bvh.cpp` I implement Bounding Volume Hierarchy and use it to h
 
 # Other things
 - The project structure looks like `pbrt` to some extent
-- `SimpleIntegrator`, `DirectionalLight`, `PointLight` have been removed
-- `Phong` computes Phong reflection model
-- In `path_integrator.hpp` and `path_integrator.cpp`, naive implementation and NEE implementation are separated into two classes.
 - Russian roulette can be enabled by template parameter. I use template to reduce code duplication
 - Enable multi-threading to accelerate rendering
 - `BVH` stores shapes following data-oriented pattern
+- `directional`, `point`, `integrator simple`, `nexteventestimation off` have been removed
