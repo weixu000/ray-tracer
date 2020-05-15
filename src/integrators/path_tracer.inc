@@ -83,7 +83,7 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
 
   const auto w_i = SampleBrdf(mat, n, w_o);
   const auto pdf = PdfBrdf(mat, n, w_i, w_o);
-  if (dot(w_i, n) <= 0 || pdf == 0) return vec3{0.f};
+  if (pdf == 0) return vec3{0.f};
   const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
 
   return Trace(
@@ -92,7 +92,7 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
         const auto x_i = ray_i(hit.t), n_i = hit.n;
         if constexpr (russian_roulette) {
           const auto throughput_RR = scene_.Brdf(mat, n, w_i, w_o) *
-                                     max(0.f, dot(n, w_i)) / pdf *
+                                     abs(dot(n, w_i)) / pdf *
                                      throughput_or_depth / (1 - q);
           return LightDirect(x_i, n_i, -w_i, hit.mat) * throughput_RR +
                  LightIndirect(x_i, n_i, -w_i, hit.mat, throughput_RR);
@@ -100,8 +100,7 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
           const auto L =
               LightDirect(x_i, n_i, -w_i, hit.mat) +
               LightIndirect(x_i, n_i, -w_i, hit.mat, throughput_or_depth - 1);
-          return L * scene_.Brdf(mat, n, w_i, w_o) * max(0.f, dot(n, w_i)) /
-                 pdf;
+          return L * scene_.Brdf(mat, n, w_i, w_o) * abs(dot(n, w_i)) / pdf;
         }
       });
 }
@@ -138,8 +137,8 @@ PathTracer<russian_roulette, sampling, mis>::MISSample(
           !brdf ? PdfBrdf(mat, n, w_i, w_o) : PdfLight(x, w_i);
       if (pdf == 0) return vec3{0.f};
       const auto w = float(pow(pdf, 2) / (pow(pdf, 2) + pow(other_pdf, 2)));
-      const auto f = light_hit->L_e * scene_.Brdf(mat, n, w_i, w_o) *
-                     max(0.f, dot(n, w_i));
+      const auto f =
+          light_hit->L_e * scene_.Brdf(mat, n, w_i, w_o) * abs(dot(n, w_i));
       return f * w / pdf;
     }
   }
@@ -171,8 +170,8 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightDirect(
         if (const auto shadow_hit = TraceShapes(ray_i);
             !shadow_hit || shadow_hit->t > light_hit->t) {
           const auto n_l = light_hit->n;
-          const auto G = max(0.f, dot(w_i, n)) * max(0.f, dot(w_i, n_l)) /
-                         length2(sample - x);
+          const auto G =
+              abs(dot(n, w_i)) * max(0.f, dot(w_i, n_l)) / length2(sample - x);
           radiance += light_hit->L_e * light_hit->jacobian *
                       scene_.Brdf(mat, n, w_i, w_o) * G;
         }

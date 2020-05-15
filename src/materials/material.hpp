@@ -15,7 +15,10 @@ class Material {
 
   glm::vec3 Brdf(const glm::vec3 &n, const glm::vec3 &w_i,
                  const glm::vec3 &w_o) const {
-    return k_d_ * ONE_OVER_PI + BrdfSpecular(n, w_i, w_o);
+    if (dot(w_i, n) > 0)
+      return k_d_ * ONE_OVER_PI + BrdfSpecular(n, w_i, w_o);
+    else
+      return BrdfSpecular(n, w_i, w_o);
   }
 
   glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_o) const {
