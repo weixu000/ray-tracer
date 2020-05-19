@@ -38,15 +38,10 @@ basic_istream<CharT, Traits> &operator>>(basic_istream<CharT, Traits> &is,
 
 using Options = unordered_map<string, string>;
 
-template <BRDF type,
-          typename Material = conditional_t<type == BRDF::GGX, GGX, Phong>,
-          typename... Args>
-MaterialRef AddMaterial(vector<Material> &materials, Args... args) {
-  Material mat(forward<Args>(args)...);
-  if (materials.empty() || materials.back() != mat) {
-    materials.push_back(mat);
-  }
-  return {type, materials.size() - 1};
+template <typename Material, typename... Args>
+MaterialRef AddMaterial(Scene &scene, Args... args) {
+  const auto ref = scene.materials.AddIfNew<Material>(forward<Args>(args)...);
+  return MaterialRef{ref.type, ref.id};
 }
 
 auto LoadScene(ifstream &fs) {
@@ -70,9 +65,8 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      const auto mat = use_ggx
-                           ? AddMaterial<BRDF::GGX>(scene.ggx, alpha, k_d, k_s)
-                           : AddMaterial<BRDF::Phong>(scene.phong, s, k_d, k_s);
+      const auto mat = use_ggx ? AddMaterial<GGX>(scene, alpha, k_d, k_s)
+                               : AddMaterial<Phong>(scene, s, k_d, k_s);
       scene.shapes.emplace_back(make_unique<Sphere>(
           position, rad, StackMatrices(transform_stack), mat));
     } else if (command == "maxverts") {
@@ -84,9 +78,8 @@ auto LoadScene(ifstream &fs) {
     } else if (command == "tri") {
       ivec3 t;
       ss >> t;
-      const auto mat = use_ggx
-                           ? AddMaterial<BRDF::GGX>(scene.ggx, alpha, k_d, k_s)
-                           : AddMaterial<BRDF::Phong>(scene.phong, s, k_d, k_s);
+      const auto mat = use_ggx ? AddMaterial<GGX>(scene, alpha, k_d, k_s)
+                               : AddMaterial<Phong>(scene, s, k_d, k_s);
       scene.shapes.emplace_back(
           make_unique<Triangle>(StackMatrices(transform_stack), verts[t[0]],
                                 verts[t[1]], verts[t[2]], mat));

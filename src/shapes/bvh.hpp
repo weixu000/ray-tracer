@@ -4,6 +4,7 @@
 #include <variant>
 #include <vector>
 
+#include "../soa.hpp"
 #include "sphere.hpp"
 #include "triangle.hpp"
 
@@ -27,7 +28,7 @@ class BVH {
 
   struct Leaf {
     AABB aabb;
-    size_t type, id;
+    SoA<Sphere, Triangle>::Ref ref;
   };
 
   using Node = std::variant<NonLeaf, Leaf>;
@@ -38,6 +39,5 @@ class BVH {
   std::optional<RayHit> Hit(size_t i, const Ray &ray) const;
 
   std::vector<Node> nodes_;
-  std::vector<Sphere> spheres_;
-  std::vector<Triangle> triangles_;
+  SoA<Sphere, Triangle> shapes_;
 };

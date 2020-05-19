@@ -9,6 +9,7 @@
 #include "materials/ggx.hpp"
 #include "materials/phong.hpp"
 #include "shapes/shape.hpp"
+#include "soa.hpp"
 
 /**
  * Hold primitives, lights, materials
@@ -18,43 +19,31 @@ class Scene {
  public:
   std::vector<std::unique_ptr<const Shape>> shapes;
   std::vector<std::unique_ptr<const Light>> lights;
-  std::vector<Phong> phong;
-  std::vector<GGX> ggx;
+  SoA<Phong, GGX> materials;
+
+  template <typename F>
+  auto Call(const MaterialRef &material, F f) const {
+    return materials.Call(SoA<Phong, GGX>::Ref{material.type, material.id}, f);
+  }
 
   template <typename... Args>
   glm::vec3 Brdf(const MaterialRef &material, Args &&... args) const {
-    switch (material.type) {
-      case BRDF::Phong:
-        return phong[material.id].Brdf(std::forward<Args>(args)...);
-      case BRDF::GGX:
-        return ggx[material.id].Brdf(std::forward<Args>(args)...);
-      default:
-        throw;
-    }
+    return Call(material, [&args...](const auto &m) {
+      return m.Brdf(std::forward<Args>(args)...);
+    });
   }
 
   template <typename... Args>
   glm::vec3 Sample(const MaterialRef &material, Args &&... args) const {
-    switch (material.type) {
-      case BRDF::Phong:
-        return phong[material.id].Sample(std::forward<Args>(args)...);
-      case BRDF::GGX:
-        return ggx[material.id].Sample(std::forward<Args>(args)...);
-
-      default:
-        throw;
-    }
+    return Call(material, [&args...](const auto &m) {
+      return m.Sample(std::forward<Args>(args)...);
+    });
   }
 
   template <typename... Args>
   float Pdf(const MaterialRef &material, Args &&... args) const {
-    switch (material.type) {
-      case BRDF::Phong:
-        return phong[material.id].Pdf(std::forward<Args>(args)...);
-      case BRDF::GGX:
-        return ggx[material.id].Pdf(std::forward<Args>(args)...);
-      default:
-        throw;
-    }
+    return Call(material, [&args...](const auto &m) {
+      return m.Pdf(std::forward<Args>(args)...);
+    });
   }
 };

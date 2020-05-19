@@ -6,34 +6,15 @@
 BVH::BVH(std::vector<std::unique_ptr<const Shape>> primitives) {
   Construct(std::begin(primitives), std::end(primitives));
   std::cout << "Nodes: " << nodes_.size() << ", " << sizeof(Node) << " bytes"
-            << std::endl
-            << "Spheres: " << spheres_.size() << ", " << sizeof(Sphere)
-            << " bytes" << std::endl
-            << "Triangles: " << triangles_.size() << ", " << sizeof(Triangle)
-            << " bytes" << std::endl;
+            << std::endl;
 }
 
 size_t BVH::Construct(std::vector<std::unique_ptr<const Shape>>::iterator begin,
                       std::vector<std::unique_ptr<const Shape>>::iterator end) {
   assert(end > begin);
   if (end - begin == 1) {
-    Leaf leaf;
-    leaf.aabb = (*begin)->GetAABB();
-
-    if (const auto sphere = dynamic_cast<const Sphere *>(begin->get())) {
-      leaf.type = 0;
-      leaf.id = spheres_.size();
-      spheres_.push_back(std::move(*sphere));
-    } else if (const auto triangle =
-                   dynamic_cast<const Triangle *>(begin->get())) {
-      leaf.type = 1;
-      leaf.id = triangles_.size();
-      triangles_.push_back(std::move(*triangle));
-    } else {
-      assert(false && "Unknown primitive type");
-    }
-
-    nodes_.emplace_back(std::move(leaf));
+    nodes_.emplace_back(
+        Leaf{(*begin)->GetAABB(), shapes_.Add(std::move(*begin))});
     return nodes_.size() - 1;
   }
 
@@ -69,10 +50,10 @@ std::optional<RayHit> BVH::Hit(size_t i, const Ray &ray) const {
   return std::visit(
       [&](const auto &node) -> std::optional<RayHit> {
         using T = std::decay_t<decltype(node)>;
+        if (!node.aabb.Hit(ray)) {
+          return std::nullopt;
+        }
         if constexpr (std::is_same_v<T, NonLeaf>) {
-          if (!node.aabb.Hit(ray)) {
-            return std::nullopt;
-          }
           const auto left_hit = Hit(node.left, ray),
                      right_hit = Hit(node.right, ray);
           if (left_hit && right_hit) {
@@ -81,18 +62,8 @@ std::optional<RayHit> BVH::Hit(size_t i, const Ray &ray) const {
             return left_hit ? left_hit : right_hit;
           }
         } else {
-          if (!node.aabb.Hit(ray)) {
-            return std::nullopt;
-          }
-          switch (node.type) {
-            case 0:
-              return spheres_[node.id].HitMaterial(ray);
-            case 1:
-              return triangles_[node.id].HitMaterial(ray);
-            default:
-              assert(false && "Unknown primitive type");
-              throw;
-          }
+          return shapes_.Call(
+              node.ref, [&ray](const auto &s) { return s.HitMaterial(ray); });
         }
       },
       nodes_[i]);
