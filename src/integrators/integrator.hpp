@@ -34,7 +34,7 @@ class Integrator {
 
   std::optional<LightEmission> TraceLights(const Ray &ray) const {
     std::optional<LightEmission> ret;
-    for (const auto &light : scene_.lights) {
+    for (const auto &light : lights_) {
       if (const auto hit = light->Hit(ray); hit && (!ret || hit->t < ret->t)) {
         ret = hit;
       }
@@ -56,11 +56,43 @@ class Integrator {
     }
   }
 
-  Scene scene_;
+  template <typename... Args>
+  glm::vec3 Brdf(const MaterialRef &material, Args &&... args) const {
+    return Call(material, [&args...](const auto &m) {
+      return m.Brdf(std::forward<Args>(args)...);
+    });
+  }
+
+  template <typename... Args>
+  glm::vec3 Sample(const MaterialRef &material, Args &&... args) const {
+    return Call(material, [&args...](const auto &m) {
+      return m.Sample(std::forward<Args>(args)...);
+    });
+  }
+
+  template <typename... Args>
+  float Pdf(const MaterialRef &material, Args &&... args) const {
+    return Call(material, [&args...](const auto &m) {
+      return m.Pdf(std::forward<Args>(args)...);
+    });
+  }
+
   Camera camera_;
+  std::vector<std::unique_ptr<const Light>> lights_;
 
  private:
   virtual glm::vec3 ShadePixel(const glm::vec2 &pixel) const = 0;
+
+  template <typename F>
+  auto Call(const MaterialRef &m, F f) const {
+    return materials_.Call(Scene::Materials::Ref{m.type, m.id}, f);
+  }
+
+  Scene::Materials materials_;
+  std::vector<MaterialRef> triangle_materials_;
+  std::vector<MaterialRef> sphere_materials_;
+
+  std::vector<glm::mat3> sphere_normal_transforms_;
 
   float gamma_;
 

@@ -42,31 +42,4 @@ class Scene {
     const auto ref = materials.AddIfNew<T>(std::forward<Args>(args)...);
     return MaterialRef{ref.type, ref.id};
   }
-
-  template <typename... Args>
-  glm::vec3 Brdf(const MaterialRef &material, Args &&... args) const {
-    return Call(material, [&args...](const auto &m) {
-      return m.Brdf(std::forward<Args>(args)...);
-    });
-  }
-
-  template <typename... Args>
-  glm::vec3 Sample(const MaterialRef &material, Args &&... args) const {
-    return Call(material, [&args...](const auto &m) {
-      return m.Sample(std::forward<Args>(args)...);
-    });
-  }
-
-  template <typename... Args>
-  float Pdf(const MaterialRef &material, Args &&... args) const {
-    return Call(material, [&args...](const auto &m) {
-      return m.Pdf(std::forward<Args>(args)...);
-    });
-  }
-
- private:
-  template <typename F>
-  auto Call(const MaterialRef &material, F f) const {
-    return materials.Call(Materials::Ref{material.type, material.id}, f);
-  }
 };

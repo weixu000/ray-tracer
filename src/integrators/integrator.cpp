@@ -71,7 +71,13 @@ void loadEmbreeSpheres(RTCDevice device, RTCScene scene,
 }  // namespace
 
 Integrator::Integrator(Scene scene, Camera camera, float gamma)
-    : scene_(std::move(scene)), camera_(std::move(camera)), gamma_(gamma) {
+    : camera_(std::move(camera)),
+      gamma_(gamma),
+      materials_(std::move(scene.materials)),
+      lights_(std::move(scene.lights)),
+      triangle_materials_(std::move(scene.triangle_materials)),
+      sphere_materials_(std::move(scene.sphere_materials)),
+      sphere_normal_transforms_(std::move(scene.sphere_normal_transforms)) {
   embree_device_ = rtcNewDevice(nullptr);
   if (!embree_device_)
     throw std::runtime_error("Could not initialize Embree device.");
@@ -79,9 +85,9 @@ Integrator::Integrator(Scene scene, Camera camera, float gamma)
   rtcSetDeviceErrorFunction(embree_device_, EmbreeErrorFunction, nullptr);
 
   embree_scene_ = rtcNewScene(embree_device_);
-  LoadEmbreeTriangles(embree_device_, embree_scene_, scene_.triangles);
+  LoadEmbreeTriangles(embree_device_, embree_scene_, scene.triangles);
   loadEmbreeSpheres(embree_device_, embree_scene_,
-                    scene_.sphere_world_transforms);
+                    scene.sphere_world_transforms);
   rtcCommitScene(embree_scene_);
 }
 
@@ -166,12 +172,11 @@ std::optional<RayHit> Integrator::TraceShapes(const Ray& ray) const {
         normalize(vec3(rayHit.hit.Ng_x, rayHit.hit.Ng_y, rayHit.hit.Ng_z));
     if (rayHit.hit.instID[0] == RTC_INVALID_GEOMETRY_ID) {
       hit.n = hitNormal;
-      hit.mat = scene_.triangle_materials[rayHit.hit.primID];
+      hit.mat = triangle_materials_[rayHit.hit.primID];
     } else {
       const auto sphereIndex = rayHit.hit.instID[0] - 1;
-      hit.n =
-          normalize(scene_.sphere_normal_transforms[sphereIndex] * hitNormal);
-      hit.mat = scene_.sphere_materials[sphereIndex];
+      hit.n = normalize(sphere_normal_transforms_[sphereIndex] * hitNormal);
+      hit.mat = sphere_materials_[sphereIndex];
     }
     return hit;
   } else
