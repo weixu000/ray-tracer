@@ -82,9 +82,10 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
   }
 
   const auto w_i = SampleBrdf(mat, n, w_o);
+  if (length(w_i) == 0) return vec3{0.f};
   const auto pdf = PdfBrdf(mat, n, w_o, w_i);
   if (pdf == 0) return vec3{0.f};
-  const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
+  const auto ray_i = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
 
   return Trace(
       ray_i, [&](const LightEmission &emission) { return vec3(0.f); },
@@ -107,10 +108,10 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
 
 template <bool russian_roulette, Sampling sampling, bool mis>
 float PathTracer<russian_roulette, sampling, mis>::PdfLight(
-    const glm::vec3 &x, const glm::vec3 &w_i) const {
+    const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_i) const {
   using namespace glm;
 
-  const auto ray = Ray{x + w_i * SHADOW_EPSILON, w_i};
+  const auto ray = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
   auto pdf = 0.f;
   for (const auto &light : scene_.lights) {
     if (const auto hit = light->Hit(ray)) {
@@ -128,13 +129,14 @@ PathTracer<russian_roulette, sampling, mis>::MISSample(
     const glm::vec3 &w_o, const MaterialRef &mat) const {
   using namespace glm;
 
-  const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
+  if (length(w_i) == 0) return vec3{0.f};
+  const auto ray_i = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
   if (const auto light_hit = TraceLights(ray_i)) {
     if (const auto shadow_hit = TraceShapes(ray_i);
         !shadow_hit || shadow_hit->t > light_hit->t) {
-      const auto pdf = brdf ? PdfBrdf(mat, n, w_o, w_i) : PdfLight(x, w_i);
+      const auto pdf = brdf ? PdfBrdf(mat, n, w_o, w_i) : PdfLight(x, n, w_i);
       const auto other_pdf =
-          !brdf ? PdfBrdf(mat, n, w_o, w_i) : PdfLight(x, w_i);
+          !brdf ? PdfBrdf(mat, n, w_o, w_i) : PdfLight(x, n, w_i);
       if (pdf == 0) return vec3{0.f};
       const auto w = float(pow(pdf, 2) / (pow(pdf, 2) + pow(other_pdf, 2)));
       const auto f =
@@ -164,7 +166,7 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightDirect(
     for (const auto &light : scene_.lights) {
       const auto sample = light->Sample();
       const auto w_i = normalize(sample - x);
-      const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
+      const auto ray_i = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
       if (const auto light_hit = TraceLights(ray_i);
           light_hit && light_hit->light == light.get()) {
         if (const auto shadow_hit = TraceShapes(ray_i);
