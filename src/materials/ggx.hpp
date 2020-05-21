@@ -27,9 +27,8 @@ class GGX : public Material {
     }
 
     const auto h = normalize(w_i + w_o);
-    const auto F = k_s_ + (1.f - k_s_) * float(pow(1 - dot(w_i, h), 5));
-    const auto ggx =
-        F * G(w_i_n) * G(w_o_n) * D(dot(h, n)) / (4 * w_i_n * w_o_n);
+    const auto ggx = F(dot(w_i, h)) * G(w_i_n) * G(w_o_n) * D(dot(h, n)) /
+                     (4 * w_i_n * w_o_n);
     return ggx;
   }
 
@@ -37,23 +36,28 @@ class GGX : public Material {
                     const glm::vec3 &w_o) const override {
     using namespace glm;
     const auto h = normalize(w_i + w_o);
-    const auto h_n = dot(h, n);
-    return D(h_n) * h_n / (4 * dot(h, w_i));
+    const auto h_n = abs(dot(h, n));
+    return D(h_n) * h_n / (4 * abs(dot(h, w_o)));
   }
 
   glm::vec3 SampleSpecular(const glm::vec3 &n,
-                           const glm::vec3 &w_o) const override {
+                           const glm::vec3 &w_i) const override {
     using namespace glm;
     const auto xi_1 = Random(), xi_2 = Random();
     const auto theta = atan(alpha_ * sqrt(xi_1 / (1 - xi_1))),
                phi = TWO_PI * xi_2;
     const auto h = ConvertSpherical(theta, phi, n);
-    return reflect(-w_o, h);
+    return reflect(-w_i, h);
   }
 
   float ProbSpecular() const override {
     using namespace glm;
     return max(.25f, compMax(k_s_) / compMax(k_d_ + k_s_));
+  }
+
+  glm::vec3 F(float w_i_h) const {
+    using namespace glm;
+    return k_s_ + (1.f - k_s_) * pow(1.f - w_i_h, 5.f);
   }
 
   float D(float h_n) const {

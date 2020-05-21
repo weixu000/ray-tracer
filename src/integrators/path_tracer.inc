@@ -82,7 +82,7 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
   }
 
   const auto w_i = SampleBrdf(mat, n, w_o);
-  const auto pdf = PdfBrdf(mat, n, w_i, w_o);
+  const auto pdf = PdfBrdf(mat, n, w_o, w_i);
   if (pdf == 0) return vec3{0.f};
   const auto ray_i = Ray{x + w_i * SHADOW_EPSILON, w_i};
 
@@ -132,9 +132,9 @@ PathTracer<russian_roulette, sampling, mis>::MISSample(
   if (const auto light_hit = TraceLights(ray_i)) {
     if (const auto shadow_hit = TraceShapes(ray_i);
         !shadow_hit || shadow_hit->t > light_hit->t) {
-      const auto pdf = brdf ? PdfBrdf(mat, n, w_i, w_o) : PdfLight(x, w_i);
+      const auto pdf = brdf ? PdfBrdf(mat, n, w_o, w_i) : PdfLight(x, w_i);
       const auto other_pdf =
-          !brdf ? PdfBrdf(mat, n, w_i, w_o) : PdfLight(x, w_i);
+          !brdf ? PdfBrdf(mat, n, w_o, w_i) : PdfLight(x, w_i);
       if (pdf == 0) return vec3{0.f};
       const auto w = float(pow(pdf, 2) / (pow(pdf, 2) + pow(other_pdf, 2)));
       const auto f =

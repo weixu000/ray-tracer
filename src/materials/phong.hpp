@@ -19,24 +19,24 @@ class Phong : public Material {
   glm::vec3 BrdfSpecular(const glm::vec3 &n, const glm::vec3 &w_i,
                          const glm::vec3 &w_o) const override {
     using namespace glm;
-    const auto r = reflect(-w_o, n);
-    return k_s_ * (s_ + 2) / 2.f * pow(max(0.f, dot(r, w_i)), s_) * ONE_OVER_PI;
+    const auto r = reflect(-w_i, n);
+    return k_s_ * (s_ + 2) / 2.f * pow(max(0.f, dot(r, w_o)), s_) * ONE_OVER_PI;
   }
 
   glm::vec3 SampleSpecular(const glm::vec3 &n,
-                           const glm::vec3 &w_o) const override {
+                           const glm::vec3 &w_i) const override {
     using namespace glm;
     const auto xi_1 = Random(), xi_2 = Random();
     const auto theta = acos(pow(xi_1, 1 / (s_ + 1))), phi = TWO_PI * xi_2;
-    const auto r = reflect(-w_o, n);
+    const auto r = reflect(-w_i, n);
     return ConvertSpherical(theta, phi, r);
   }
 
   float PdfSpecular(const glm::vec3 &n, const glm::vec3 &w_i,
                     const glm::vec3 &w_o) const override {
     using namespace glm;
-    const auto r = reflect(-w_o, n);
-    return (s_ + 1) * TWO_OVER_PI * pow(max(0.f, dot(r, w_i)), s_);
+    const auto r = reflect(-w_i, n);
+    return (s_ + 1) * TWO_OVER_PI * pow(max(0.f, dot(r, w_o)), s_);
   }
 
   float ProbSpecular() const override {

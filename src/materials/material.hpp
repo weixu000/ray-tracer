@@ -21,9 +21,9 @@ class Material {
       return BrdfSpecular(n, w_i, w_o);
   }
 
-  glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_o) const {
+  glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_i) const {
     if (Random() <= ProbSpecular())
-      return SampleSpecular(n, w_o);
+      return SampleSpecular(n, w_i);
     else {
       using namespace glm;
       const auto xi_1 = Random(), xi_2 = Random();
@@ -37,7 +37,7 @@ class Material {
     using namespace glm;
 
     const auto t = ProbSpecular();
-    return (1 - t) * max(0.f, dot(n, w_i)) * ONE_OVER_PI +
+    return (1 - t) * max(0.f, dot(n, w_o)) * ONE_OVER_PI +
            t * PdfSpecular(n, w_i, w_o);
   }
 
@@ -49,7 +49,7 @@ class Material {
                                  const glm::vec3 &w_o) const = 0;
 
   virtual glm::vec3 SampleSpecular(const glm::vec3 &n,
-                                   const glm::vec3 &w_o) const = 0;
+                                   const glm::vec3 &w_i) const = 0;
 
   virtual float PdfSpecular(const glm::vec3 &n, const glm::vec3 &w_i,
                             const glm::vec3 &w_o) const = 0;
