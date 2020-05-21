@@ -47,8 +47,10 @@ auto GetMaterial(Scene &scene, const string &material_type, const vec3 &k_d,
   else if (material_type == "refractive")
     return scene.AddMaterial<ComposedMaterial<GGXReflection, GGXRefraction>>(
         GGXReflection(n, alpha), GGXRefraction(n, alpha));
-  else
-    throw runtime_error("Unkown material.");
+  else {
+    cerr << "Unkown material:" << material_type << endl;
+    exit(EXIT_FAILURE);
+  }
 }
 
 auto GetTriangles(const uvec3 &t, const vector<vec3> &verts,
@@ -131,9 +133,11 @@ auto LoadScene(ifstream &fs) {
     } else if (command == "popTransform") {
       transform_stack.pop_back();
     } else if (command == "directional") {
-      throw runtime_error("Directional light removed form implementation.");
+      cerr << "Directional light removed form implementation" << endl;
+      exit(EXIT_FAILURE);
     } else if (command == "point") {
-      throw runtime_error("Point light removed form implementation.");
+      cerr << "Point light removed form implementation" << endl;
+      exit(EXIT_FAILURE);
     } else if (command == "quadLight") {
       vec3 v0, e1, e2, intensity;
       ss >> v0 >> e1 >> e2 >> intensity;
@@ -196,7 +200,8 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
                                       Camera camera) {
   if (options.at("integrator") == "pathtracer") {
     if (GetDefault(options, "nexteventestimation", "off"s) == "off") {
-      throw runtime_error("Simple path tracer removed");
+      cerr << "Simple path tracer removed" << endl;
+      exit(EXIT_FAILURE);
     }
 
     const auto mis =
@@ -217,7 +222,8 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
     cout << "Gamma: " << gamma << endl;
 
     if (GetDefault(options, "importancesampling", "hemisphere"s) != "brdf") {
-      throw runtime_error("Importance sampling other than BRDF removed");
+      cerr << "Importance sampling other than BRDF removed" << endl;
+      exit(EXIT_FAILURE);
     }
 
     if (russian_roulette) {
@@ -227,19 +233,22 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
                               gamma);
     }
   } else {
-    throw runtime_error("Unknown integrator: " + options.at("integrator"));
+    cerr << "Unknown integrator: " << options.at("integrator") << endl;
+    exit(EXIT_FAILURE);
   }
 }
 }  // namespace
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    throw runtime_error("Incorrect command-line options");
+    cerr << "Incorrect command-line options" << endl;
+    exit(EXIT_FAILURE);
   }
   string input_path = argv[1];
   ifstream fs(input_path);
   if (!fs.is_open()) {
-    throw runtime_error("Cannot open input file: " + input_path);
+    cerr << "Cannot open input file: " << input_path << endl;
+    exit(EXIT_FAILURE);
   }
   cout << "Parsing: " << input_path << endl;
 
@@ -248,7 +257,10 @@ int main(int argc, char **argv) {
   const auto integrator = LoadIntegrator(options, move(scene), move(camera));
 
   const auto output_file = GetDefault(options, "output", ""s);
-  if (output_file.empty()) throw runtime_error("Output file unspecified");
+  if (output_file.empty()) {
+    cerr << "Output file unspecified" << endl;
+    exit(EXIT_FAILURE);
+  }
 
   integrator->Render().WriteTo(output_file);
   cout << "Output: " << output_file << endl;

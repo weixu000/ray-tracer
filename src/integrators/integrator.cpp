@@ -12,26 +12,27 @@
 #include "../thread_pool.hpp"
 #endif
 
+using namespace std;
+using namespace glm;
+
 namespace {
 void EmbreeErrorFunction(void*, RTCError error, const char* str) {
-  std::cerr << "Embree error (" << error << "): " << str << std::endl;
+  cerr << "Embree error (" << error << "): " << str << endl;
 }
 
-void LoadEmbreeTriangles(
-    RTCDevice device, RTCScene scene,
-    const std::vector<std::array<glm::vec3, 3>>& vertices) {
+void LoadEmbreeTriangles(RTCDevice device, RTCScene scene,
+                         const vector<array<vec3, 3>>& vertices) {
   auto triangles = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_TRIANGLE);
 
-  auto vertex_buffer = reinterpret_cast<glm::vec3*>(rtcSetNewGeometryBuffer(
-      triangles, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3,
-      sizeof(glm::vec3), vertices.size() * 3));
-  std::memcpy(vertex_buffer, vertices.data(),
-              vertices.size() * sizeof(glm::vec3) * 3);
-
-  auto index_buffer = reinterpret_cast<glm::uint*>(rtcSetNewGeometryBuffer(
-      triangles, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(glm::uvec3),
+  auto vertex_buffer = reinterpret_cast<vec3*>(rtcSetNewGeometryBuffer(
+      triangles, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, sizeof(vec3),
       vertices.size() * 3));
-  std::iota(index_buffer, index_buffer + vertices.size() * 3, 0U);
+  memcpy(vertex_buffer, vertices.data(), vertices.size() * sizeof(vec3) * 3);
+
+  auto index_buffer = reinterpret_cast<uint*>(rtcSetNewGeometryBuffer(
+      triangles, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, sizeof(uvec3),
+      vertices.size() * 3));
+  iota(index_buffer, index_buffer + vertices.size() * 3, 0U);
 
   rtcCommitGeometry(triangles);
   rtcAttachGeometry(scene, triangles);
@@ -39,15 +40,14 @@ void LoadEmbreeTriangles(
 }
 
 void loadEmbreeSpheres(RTCDevice device, RTCScene scene,
-                       const std::vector<glm::mat4>& transforms) {
+                       const vector<mat4>& transforms) {
   auto sphere_scene = rtcNewScene(device);
 
   RTCGeometry sphere = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_SPHERE_POINT);
 
-  auto sphere_point = reinterpret_cast<glm::vec4*>(
-      rtcSetNewGeometryBuffer(sphere, RTC_BUFFER_TYPE_VERTEX, 0,
-                              RTC_FORMAT_FLOAT4, sizeof(glm::vec4), 1));
-  *sphere_point = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+  auto sphere_point = reinterpret_cast<vec4*>(rtcSetNewGeometryBuffer(
+      sphere, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT4, sizeof(vec4), 1));
+  *sphere_point = vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
   rtcCommitGeometry(sphere);
   rtcAttachGeometry(sphere_scene, sphere);
@@ -59,7 +59,7 @@ void loadEmbreeSpheres(RTCDevice device, RTCScene scene,
     rtcSetGeometryInstancedScene(instance, sphere_scene);
     rtcSetGeometryTimeStepCount(instance, 1);
     rtcSetGeometryTransform(instance, 0, RTC_FORMAT_FLOAT4X4_COLUMN_MAJOR,
-                            glm::value_ptr(transform));
+                            value_ptr(transform));
     rtcCommitGeometry(instance);
     rtcAttachGeometry(scene, instance);
     rtcReleaseGeometry(instance);
@@ -71,16 +71,16 @@ void loadEmbreeSpheres(RTCDevice device, RTCScene scene,
 }  // namespace
 
 Integrator::Integrator(Scene scene, Camera camera, float gamma)
-    : camera_(std::move(camera)),
+    : camera_(move(camera)),
       gamma_(gamma),
-      materials_(std::move(scene.materials)),
-      lights_(std::move(scene.lights)),
-      triangle_materials_(std::move(scene.triangle_materials)),
-      sphere_materials_(std::move(scene.sphere_materials)),
-      sphere_normal_transforms_(std::move(scene.sphere_normal_transforms)) {
+      materials_(move(scene.materials)),
+      lights_(move(scene.lights)),
+      triangle_materials_(move(scene.triangle_materials)),
+      sphere_materials_(move(scene.sphere_materials)),
+      sphere_normal_transforms_(move(scene.sphere_normal_transforms)) {
   embree_device_ = rtcNewDevice(nullptr);
   if (!embree_device_)
-    throw std::runtime_error("Could not initialize Embree device.");
+    throw runtime_error("Could not initialize Embree device.");
 
   rtcSetDeviceErrorFunction(embree_device_, EmbreeErrorFunction, nullptr);
 
@@ -98,13 +98,13 @@ Integrator::~Integrator() {
 
 Image Integrator::Render() const {
   using namespace glm;
-  using namespace std::chrono;
+  using namespace chrono;
 
   const auto w = camera_.width_;
   const auto h = camera_.height_;
 
   Image output(w, h);
-  std::cout << "Rendering..." << std::endl;
+  cout << "Rendering..." << endl;
   const auto start = steady_clock::now();
 #ifdef MULTITHREADING
   {
@@ -114,10 +114,8 @@ Image Integrator::Render() const {
       for (int j = 0; j < w; ++j) {
         pool.Add([this, &output, i, j]() {
           const auto color = pow(ShadePixel({i, j}), vec3{1 / gamma_});
-          if (any(isnan(color)))
-            std::cerr << "NaN Pixel: " << i << "," << j << std::endl;
-          if (any(isinf(color)))
-            std::cerr << "Inf Pixel: " << i << "," << j << std::endl;
+          if (any(isnan(color))) cerr << "NaN Pixel: " << i << "," << j << endl;
+          if (any(isinf(color))) cerr << "Inf Pixel: " << i << "," << j << endl;
           output.At(i, j) = u8vec3(min(color, vec3{1.f}) * 255.0f);
         });
       }
@@ -127,23 +125,21 @@ Image Integrator::Render() const {
   for (int i = 0; i < h; ++i) {
     for (int j = 0; j < w; ++j) {
       const auto color = pow(ShadePixel({i, j}), vec3{1 / gamma_});
-      if (any(isnan(color)))
-        std::cerr << "NaN Pixel:" << i << "," << j << std::endl;
-      if (any(isinf(color)))
-        std::cerr << "Inf Pixel:" << i << "," << j << std::endl;
+      if (any(isnan(color))) cerr << "NaN Pixel:" << i << "," << j << endl;
+      if (any(isinf(color))) cerr << "Inf Pixel:" << i << "," << j << endl;
       output.At(i, j) = u8vec3(min(color, vec3{1.f}) * 255.0f);
     }
   }
 #endif
   const auto end = steady_clock::now();
-  std::cout << "Rendered in "
-            << duration_cast<milliseconds>(end - start).count() / 1000.f << "s"
-            << std::endl;
+  cout << "Rendered in "
+       << duration_cast<milliseconds>(end - start).count() / 1000.f << "s"
+       << endl;
 
   return output;
 }
 
-std::optional<RayHit> Integrator::TraceShapes(const Ray& ray) const {
+optional<RayHit> Integrator::TraceShapes(const Ray& ray) const {
   using namespace glm;
 
   RTCIntersectContext context;
@@ -157,7 +153,7 @@ std::optional<RayHit> Integrator::TraceShapes(const Ray& ray) const {
   rayHit.ray.dir_y = ray.direction.y;
   rayHit.ray.dir_z = ray.direction.z;
   rayHit.ray.tnear = 0.0001f;
-  rayHit.ray.tfar = std::numeric_limits<float>::infinity();
+  rayHit.ray.tfar = numeric_limits<float>::infinity();
   rayHit.ray.mask = 0;
   rayHit.ray.flags = 0;
   rayHit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
@@ -180,5 +176,5 @@ std::optional<RayHit> Integrator::TraceShapes(const Ray& ray) const {
     }
     return hit;
   } else
-    return std::nullopt;
+    return nullopt;
 }
