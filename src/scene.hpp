@@ -23,7 +23,8 @@ class Scene {
   std::vector<std::unique_ptr<const Light>> lights;
 
   using Materials = SoA<ComposedMaterial<Lambertian, Phong>,
-                        ComposedMaterial<Lambertian, GGXReflection>>;
+                        ComposedMaterial<Lambertian, GGXReflection>,
+                        ComposedMaterial<GGXReflection, GGXRefraction>>;
   Materials materials;
 
   template <typename T, typename... Args>

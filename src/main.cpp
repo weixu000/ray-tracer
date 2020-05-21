@@ -44,8 +44,8 @@ auto LoadScene(ifstream &fs) {
   vector<vec3> verts;
   vector<mat4> transform_stack;
   vec3 k_d, k_s;
-  float s, alpha;
-  auto use_ggx = false;
+  float s, alpha, n;
+  string material_type = "phong";
 
   string line;
   while (getline(fs, line)) {
@@ -59,12 +59,18 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      const auto mat =
-          use_ggx
-              ? scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
-                    Lambertian(k_d), GGXReflection(k_s, alpha))
-              : scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
-                    Lambertian(k_d), Phong(k_s, s));
+      MaterialRef mat;
+      if (material_type == "phong")
+        mat = scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
+            Lambertian(k_d), Phong(k_s, s));
+      else if (material_type == "ggx")
+        mat = scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
+            Lambertian(k_d), GGXReflection(k_s, alpha));
+      else if (material_type == "refractive")
+        mat = scene.AddMaterial<ComposedMaterial<GGXReflection, GGXRefraction>>(
+            GGXReflection(n, alpha), GGXRefraction(n, alpha));
+      else
+        throw std::runtime_error("Unkown material.");
       scene.shapes.emplace_back(make_unique<Sphere>(
           position, rad, StackMatrices(transform_stack), mat));
     } else if (command == "maxverts") {
@@ -76,12 +82,18 @@ auto LoadScene(ifstream &fs) {
     } else if (command == "tri") {
       ivec3 t;
       ss >> t;
-      const auto mat =
-          use_ggx
-              ? scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
-                    Lambertian(k_d), GGXReflection(k_s, alpha))
-              : scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
-                    Lambertian(k_d), Phong(k_s, s));
+      MaterialRef mat;
+      if (material_type == "phong")
+        mat = scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
+            Lambertian(k_d), Phong(k_s, s));
+      else if (material_type == "ggx")
+        mat = scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
+            Lambertian(k_d), GGXReflection(k_s, alpha));
+      else if (material_type == "refractive")
+        mat = scene.AddMaterial<ComposedMaterial<GGXReflection, GGXRefraction>>(
+            GGXReflection(n, alpha), GGXRefraction(n, alpha));
+      else
+        throw std::runtime_error("Unkown material.");
       scene.shapes.emplace_back(
           make_unique<Triangle>(StackMatrices(transform_stack), verts[t[0]],
                                 verts[t[1]], verts[t[2]], mat));
@@ -126,10 +138,10 @@ auto LoadScene(ifstream &fs) {
       ss >> s;
     } else if (command == "roughness") {
       ss >> alpha;
+    } else if (command == "ior") {
+      ss >> n;
     } else if (command == "brdf") {
-      string option;
-      getline(ss >> ws, option);
-      use_ggx = option == "ggx";
+      getline(ss >> ws, material_type);
     } else {
       string option;
       getline(ss >> ws, option);
