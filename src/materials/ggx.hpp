@@ -2,72 +2,88 @@
 
 #include <glm/gtx/component_wise.hpp>
 
+#include "../samplers/sampling.hpp"
 #include "material.hpp"
 
-class GGX : public Material {
- public:
-  template <typename... Args>
-  GGX(float alpha, Args... args)
-      : Material(std::forward<Args>(args)...), alpha_(alpha) {}
+template <typename T>
+inline T F(float w_i_h, T k_s) {
+  using namespace glm;
+  return k_s + (1.f - k_s) * pow(1.f - abs(w_i_h), 5.f);
+}
 
-  friend bool operator==(const GGX &x, const GGX &y) {
-    return x.k_d_ == y.k_d_ && x.k_s_ == y.k_s_ && x.alpha_ == y.alpha_;
+inline float D(float h_n, float a) {
+  using namespace glm;
+  return ONE_OVER_PI / pow(a * pow(h_n, 2.f) + (1 - pow(h_n, 2.f)) / a, 2.f);
+}
+
+inline float G1(float v_n, float a) {
+  using namespace glm;
+  return 2 / (1 + sqrt(1 + pow(a / v_n, 2.f) - pow(a, 2.f)));
+}
+
+inline float G(float w_i_n, float w_o_n, float a) {
+  return G1(w_i_n, a) * G1(w_o_n, a);
+}
+
+inline glm::vec3 SampleHalfVector(const glm::vec3 &n, float a) {
+  using namespace glm;
+  const auto xi_1 = Random(), xi_2 = Random();
+  const auto theta = atan(a * sqrt(xi_1 / (1 - xi_1))), phi = TWO_PI * xi_2;
+  return ConvertSpherical(theta, phi, n);
+}
+
+class GGXReflection : public Material {
+ public:
+  GGXReflection(const glm::vec3 &k_s, float alpha) : alpha_(alpha), k_s_(k_s) {}
+
+  GGXReflection(float n, float alpha)
+      : alpha_(alpha), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
+
+  friend bool operator==(const GGXReflection &x, const GGXReflection &y) {
+    return x.k_s_ == y.k_s_ && x.alpha_ == y.alpha_;
   }
 
-  friend bool operator!=(const GGX &x, const GGX &y) { return !(x == y); }
+  friend bool operator!=(const GGXReflection &x, const GGXReflection &y) {
+    return !(x == y);
+  }
 
- private:
-  glm::vec3 BrdfSpecular(const glm::vec3 &n, const glm::vec3 &w_i,
-                         const glm::vec3 &w_o) const override {
+  glm::vec3 Brdf(const glm::vec3 &n, const glm::vec3 &w_i,
+                 const glm::vec3 &w_o) const override {
     using namespace glm;
 
     const auto w_i_n = dot(w_i, n), w_o_n = dot(w_o, n);
-    if (w_i_n < 0 || w_o_n < 0) {
+    const auto h = sign(w_i_n) * normalize(w_i + w_o);
+    const auto h_n = dot(h, n), w_i_h = dot(w_i, h), w_o_h = dot(w_o, h);
+    if (h_n > 0 && w_i_h * w_i_n > 0 && w_o_h * w_o_n > 0) {
+      return F(w_i_h, k_s_) * G(w_i_n, w_o_n, alpha_) * D(h_n, alpha_) /
+             (4 * abs(w_i_n * w_o_n));
+    } else
       return vec3{0.f};
-    }
-
-    const auto h = normalize(w_i + w_o);
-    const auto ggx = F(dot(w_i, h)) * G(w_i_n) * G(w_o_n) * D(dot(h, n)) /
-                     (4 * w_i_n * w_o_n);
-    return ggx;
   }
 
-  float PdfSpecular(const glm::vec3 &n, const glm::vec3 &w_i,
-                    const glm::vec3 &w_o) const override {
+  float Pdf(const glm::vec3 &n, const glm::vec3 &w_i,
+            const glm::vec3 &w_o) const override {
     using namespace glm;
-    const auto h = normalize(w_i + w_o);
-    const auto h_n = abs(dot(h, n));
-    return D(h_n) * h_n / (4 * abs(dot(h, w_o)));
+
+    const auto h = sign(dot(w_i, n)) * normalize(w_i + w_o);
+    const auto h_n = dot(h, n);
+    if (h_n > 0)
+      return D(h_n, alpha_) * h_n / (4 * abs(dot(h, w_o)));
+    else
+      return 0.f;
   }
 
-  glm::vec3 SampleSpecular(const glm::vec3 &n,
-                           const glm::vec3 &w_i) const override {
+  glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_i) const override {
     using namespace glm;
-    const auto xi_1 = Random(), xi_2 = Random();
-    const auto theta = atan(alpha_ * sqrt(xi_1 / (1 - xi_1))),
-               phi = TWO_PI * xi_2;
-    const auto h = ConvertSpherical(theta, phi, n);
+    const auto h = SampleHalfVector(n, alpha_);
     return reflect(-w_i, h);
   }
 
-  float ProbSpecular() const override {
-    using namespace glm;
-    return max(.25f, compMax(k_s_) / compMax(k_d_ + k_s_));
+  float Power(const glm::vec3 &n, const glm::vec3 &w_i) const override {
+    return glm::compAdd(F(glm::dot(w_i, n), k_s_));
   }
 
-  glm::vec3 F(float w_i_h) const {
-    using namespace glm;
-    return k_s_ + (1.f - k_s_) * pow(1.f - w_i_h, 5.f);
-  }
-
-  float D(float h_n) const {
-    return pow(alpha_, 2) /
-           (PI * pow(h_n, 4) * pow(pow(alpha_, 2) + 1 / pow(h_n, 2) - 1, 2));
-  }
-
-  float G(float v_n) const {
-    return 2 / (1 + sqrt(1 + pow(alpha_, 2) * (1 / pow(v_n, 2) - 1)));
-  }
-
+ private:
   float alpha_;
+  glm::vec3 k_s_;
 };

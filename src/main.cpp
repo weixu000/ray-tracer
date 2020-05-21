@@ -38,12 +38,6 @@ basic_istream<CharT, Traits> &operator>>(basic_istream<CharT, Traits> &is,
 
 using Options = unordered_map<string, string>;
 
-template <typename Material, typename... Args>
-MaterialRef AddMaterial(Scene &scene, Args... args) {
-  const auto ref = scene.materials.AddIfNew<Material>(forward<Args>(args)...);
-  return MaterialRef{ref.type, ref.id};
-}
-
 auto LoadScene(ifstream &fs) {
   Scene scene;
   Options others;
@@ -65,8 +59,12 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      const auto mat = use_ggx ? AddMaterial<GGX>(scene, alpha, k_d, k_s)
-                               : AddMaterial<Phong>(scene, s, k_d, k_s);
+      const auto mat =
+          use_ggx
+              ? scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
+                    Lambertian(k_d), GGXReflection(k_s, alpha))
+              : scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
+                    Lambertian(k_d), Phong(k_s, s));
       scene.shapes.emplace_back(make_unique<Sphere>(
           position, rad, StackMatrices(transform_stack), mat));
     } else if (command == "maxverts") {
@@ -78,8 +76,12 @@ auto LoadScene(ifstream &fs) {
     } else if (command == "tri") {
       ivec3 t;
       ss >> t;
-      const auto mat = use_ggx ? AddMaterial<GGX>(scene, alpha, k_d, k_s)
-                               : AddMaterial<Phong>(scene, s, k_d, k_s);
+      const auto mat =
+          use_ggx
+              ? scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
+                    Lambertian(k_d), GGXReflection(k_s, alpha))
+              : scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
+                    Lambertian(k_d), Phong(k_s, s));
       scene.shapes.emplace_back(
           make_unique<Triangle>(StackMatrices(transform_stack), verts[t[0]],
                                 verts[t[1]], verts[t[2]], mat));

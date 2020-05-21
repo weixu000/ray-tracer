@@ -6,7 +6,9 @@
 #include <vector>
 
 #include "lights/light.hpp"
+#include "materials/composed_material.hpp"
 #include "materials/ggx.hpp"
+#include "materials/lambertian.hpp"
 #include "materials/phong.hpp"
 #include "shapes/shape.hpp"
 #include "soa.hpp"
@@ -19,11 +21,15 @@ class Scene {
  public:
   std::vector<std::unique_ptr<const Shape>> shapes;
   std::vector<std::unique_ptr<const Light>> lights;
-  SoA<Phong, GGX> materials;
 
-  template <typename F>
-  auto Call(const MaterialRef &material, F f) const {
-    return materials.Call(SoA<Phong, GGX>::Ref{material.type, material.id}, f);
+  using Materials = SoA<ComposedMaterial<Lambertian, Phong>,
+                        ComposedMaterial<Lambertian, GGXReflection>>;
+  Materials materials;
+
+  template <typename T, typename... Args>
+  MaterialRef AddMaterial(Args... args) {
+    const auto ref = materials.AddIfNew<T>(std::forward<Args>(args)...);
+    return MaterialRef{ref.type, ref.id};
   }
 
   template <typename... Args>
@@ -45,5 +51,11 @@ class Scene {
     return Call(material, [&args...](const auto &m) {
       return m.Pdf(std::forward<Args>(args)...);
     });
+  }
+
+ private:
+  template <typename F>
+  auto Call(const MaterialRef &material, F f) const {
+    return materials.Call(Materials::Ref{material.type, material.id}, f);
   }
 };
