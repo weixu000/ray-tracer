@@ -188,11 +188,20 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
 
     const auto mis =
         GetDefault(options, "nexteventestimation", "off"s) == "mis";
+    if (mis) cout << "Multiple Importance Sampling enabled" << endl;
+
     const auto russian_roulette =
         GetDefault(options, "russianroulette", "off"s) == "on";
+    if (russian_roulette) cout << "Russian Roulette enabled" << endl;
+
     const auto spp = GetDefault(options, "spp", 1);
+    cout << "Sample per pixel: " << spp << endl;
+
     const auto max_depth = GetDefault(options, "maxdepth", 5);
+    if (!russian_roulette) cout << "Max depth: " << max_depth << endl;
+
     const auto gamma = GetDefault(options, "gamma", 1.f);
+    cout << "Gamma: " << gamma << endl;
 
     Sampling importance_sampling = Sampling::Hemisphere;
     if (options.count("importancesampling")) {
@@ -239,4 +248,5 @@ int main(int argc, char **argv) {
   ss >> output_file;
 
   integrator->Render().WriteTo(output_file);
+  cout << "Output: " << output_file << endl;
 }

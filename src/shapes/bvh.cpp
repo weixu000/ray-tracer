@@ -5,8 +5,7 @@
 
 BVH::BVH(std::vector<std::unique_ptr<const Shape>> primitives) {
   Construct(std::begin(primitives), std::end(primitives));
-  std::cout << "Nodes: " << nodes_.size() << ", " << sizeof(Node) << " bytes"
-            << std::endl;
+  std::cout << "BVH nodes: " << nodes_.size() << std::endl;
 }
 
 size_t BVH::Construct(std::vector<std::unique_ptr<const Shape>>::iterator begin,
