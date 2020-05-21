@@ -165,23 +165,14 @@ auto LoadCamera(const Options &options) {
   return Camera(look_from, look_at, up, fov, width, height);
 }
 
-template <Sampling sampling, bool mis, template <auto...> typename T>
-using Entry =
-    RegistryFactory<Integrator, Sampling, bool>::Entry<sampling, mis, T>;
+template <bool mis, template <auto...> typename T>
+using Entry = RegistryFactory<Integrator, bool>::Entry<mis, T>;
 template <typename... Ts>
-using Registry = RegistryFactory<Integrator, Sampling, bool>::Registry<Ts...>;
-using RegistryNEE = Registry<Entry<Sampling::Hemisphere, false, PathTracerNEE>,
-                             Entry<Sampling::Cosine, false, PathTracerNEE>,
-                             Entry<Sampling::BRDF, false, PathTracerNEE>,
-                             Entry<Sampling::Hemisphere, true, PathTracerNEE>,
-                             Entry<Sampling::Cosine, true, PathTracerNEE>,
-                             Entry<Sampling::BRDF, true, PathTracerNEE>>;
-using RegistryRR = Registry<Entry<Sampling::Hemisphere, false, PathTracerRR>,
-                            Entry<Sampling::Cosine, false, PathTracerRR>,
-                            Entry<Sampling::BRDF, false, PathTracerRR>,
-                            Entry<Sampling::Hemisphere, true, PathTracerRR>,
-                            Entry<Sampling::Cosine, true, PathTracerRR>,
-                            Entry<Sampling::BRDF, true, PathTracerRR>>;
+using Registry = RegistryFactory<Integrator, bool>::Registry<Ts...>;
+using RegistryNEE =
+    Registry<Entry<false, PathTracerNEE>, Entry<true, PathTracerNEE>>;
+using RegistryRR =
+    Registry<Entry<false, PathTracerRR>, Entry<true, PathTracerRR>>;
 
 template <typename C, typename K, typename V>
 V GetDefault(const C &m, const K &key, const V &defval) {
@@ -217,22 +208,16 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
     const auto gamma = GetDefault(options, "gamma", 1.f);
     cout << "Gamma: " << gamma << endl;
 
-    Sampling importance_sampling = Sampling::Hemisphere;
-    if (options.count("importancesampling")) {
-      const auto method = options.at("importancesampling");
-      if (method == "cosine") {
-        importance_sampling = Sampling::Cosine;
-      } else if (method == "brdf") {
-        importance_sampling = Sampling::BRDF;
-      }
+    if (GetDefault(options, "importancesampling", "hemisphere"s) != "brdf") {
+      throw std::runtime_error("Importance sampling other than BRDF removed");
     }
 
     if (russian_roulette) {
-      return RegistryRR::Get(importance_sampling, mis, spp, std::move(scene),
-                             std::move(camera), gamma);
+      return RegistryRR::Get(mis, spp, std::move(scene), std::move(camera),
+                             gamma);
     } else {
-      return RegistryNEE::Get(importance_sampling, mis, max_depth, spp,
-                              std::move(scene), std::move(camera), gamma);
+      return RegistryNEE::Get(mis, max_depth, spp, std::move(scene),
+                              std::move(camera), gamma);
     }
   } else {
     throw std::runtime_error("Unknown integrator: " + options.at("integrator"));

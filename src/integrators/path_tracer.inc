@@ -6,63 +6,33 @@
 
 #include "../samplers/sampling.hpp"
 
-template <bool russian_roulette, Sampling sampling, bool mis>
-glm::vec3 PathTracer<russian_roulette, sampling, mis>::Sample(
-    const Ray &ray) const {
+template <bool russian_roulette, bool mis>
+glm::vec3 PathTracer<russian_roulette, mis>::ShadePixel(
+    const glm::vec2 &pixel) const {
   using namespace glm;
 
-  return Trace(
-      ray, [&](const LightEmission &emission) { return emission.L_e; },
-      [&](const RayHit &hit) {
-        const auto x = ray(hit.t), n = hit.n;
-        const auto w_o = -ray.direction;
-        if constexpr (russian_roulette) {
-          return LightDirect(x, n, w_o, hit.mat) +
-                 LightIndirect(x, n, w_o, hit.mat, vec3(1.f));
-        } else {
-          return LightDirect(x, n, w_o, hit.mat) +
-                 LightIndirect(x, n, w_o, hit.mat, max_depth_ - 1);
-        }
-      });
-}
-
-template <bool russian_roulette, Sampling sampling, bool mis>
-glm::vec3 PathTracer<russian_roulette, sampling, mis>::SampleBrdf(
-    const MaterialRef &mat, const glm::vec3 &n, const glm::vec3 &w_o) const {
-  switch (sampling) {
-    case Sampling::Hemisphere: {
-      static HemisphereSampler sampler;
-      return sampler.Sample(n);
-    }
-    case Sampling::Cosine: {
-      static CosineSampler sampler;
-      return sampler.Sample(n);
-    }
-    case Sampling::BRDF:
-      return scene_.Sample(mat, n, w_o);
+  auto radiance = vec3(0.f);
+  for (int i = 0; i < num_pixel_sample_; ++i) {
+    const auto ray = camera_.GenerateEyeRay(pixel + vec2{Random(), Random()});
+    radiance += Trace(
+        ray, [&](const LightEmission &emission) { return emission.L_e; },
+        [&](const RayHit &hit) {
+          const auto x = ray(hit.t), n = hit.n;
+          const auto w_o = -ray.direction;
+          if constexpr (russian_roulette) {
+            return LightDirect(x, n, w_o, hit.mat) +
+                   LightIndirect(x, n, w_o, hit.mat, vec3(1.f));
+          } else {
+            return LightDirect(x, n, w_o, hit.mat) +
+                   LightIndirect(x, n, w_o, hit.mat, max_depth_ - 1);
+          }
+        });
   }
+  return radiance / float(num_pixel_sample_);
 }
 
-template <bool russian_roulette, Sampling sampling, bool mis>
-float PathTracer<russian_roulette, sampling, mis>::PdfBrdf(
-    const MaterialRef &mat, const glm::vec3 &n, const glm::vec3 &w_i,
-    const glm::vec3 &w_o) const {
-  switch (sampling) {
-    case Sampling::Hemisphere: {
-      static HemisphereSampler sampler;
-      return sampler.Pdf();
-    }
-    case Sampling::Cosine: {
-      static CosineSampler sampler;
-      return sampler.Pdf(n, w_i);
-    }
-    case Sampling::BRDF:
-      return scene_.Pdf(mat, n, w_i, w_o);
-  }
-}
-
-template <bool russian_roulette, Sampling sampling, bool mis>
-glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
+template <bool russian_roulette, bool mis>
+glm::vec3 PathTracer<russian_roulette, mis>::LightIndirect(
     const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_o,
     const MaterialRef &mat,
     std::conditional_t<russian_roulette, const glm::vec3 &, int>
@@ -81,9 +51,9 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
     }
   }
 
-  const auto w_i = SampleBrdf(mat, n, w_o);
+  const auto w_i = scene_.Sample(mat, n, w_o);
   if (length(w_i) == 0) return vec3{0.f};
-  const auto pdf = PdfBrdf(mat, n, w_o, w_i);
+  const auto pdf = scene_.Pdf(mat, n, w_o, w_i);
   if (pdf == 0) return vec3{0.f};
   const auto ray_i = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
 
@@ -106,9 +76,10 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightIndirect(
       });
 }
 
-template <bool russian_roulette, Sampling sampling, bool mis>
-float PathTracer<russian_roulette, sampling, mis>::PdfLight(
-    const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_i) const {
+template <bool russian_roulette, bool mis>
+float PathTracer<russian_roulette, mis>::PdfLight(const glm::vec3 &x,
+                                                  const glm::vec3 &n,
+                                                  const glm::vec3 &w_i) const {
   using namespace glm;
 
   const auto ray = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
@@ -121,10 +92,9 @@ float PathTracer<russian_roulette, sampling, mis>::PdfLight(
   return pdf / scene_.lights.size();
 }
 
-template <bool russian_roulette, Sampling sampling, bool mis>
+template <bool russian_roulette, bool mis>
 template <bool brdf, bool T>
-std::enable_if_t<T, glm::vec3>
-PathTracer<russian_roulette, sampling, mis>::MISSample(
+std::enable_if_t<T, glm::vec3> PathTracer<russian_roulette, mis>::MISSample(
     const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_i,
     const glm::vec3 &w_o, const MaterialRef &mat) const {
   using namespace glm;
@@ -134,9 +104,10 @@ PathTracer<russian_roulette, sampling, mis>::MISSample(
   if (const auto light_hit = TraceLights(ray_i)) {
     if (const auto shadow_hit = TraceShapes(ray_i);
         !shadow_hit || shadow_hit->t > light_hit->t) {
-      const auto pdf = brdf ? PdfBrdf(mat, n, w_o, w_i) : PdfLight(x, n, w_i);
+      const auto pdf =
+          brdf ? scene_.Pdf(mat, n, w_o, w_i) : PdfLight(x, n, w_i);
       const auto other_pdf =
-          !brdf ? PdfBrdf(mat, n, w_o, w_i) : PdfLight(x, n, w_i);
+          !brdf ? scene_.Pdf(mat, n, w_o, w_i) : PdfLight(x, n, w_i);
       if (pdf == 0) return vec3{0.f};
       const auto w = float(pow(pdf, 2) / (pow(pdf, 2) + pow(other_pdf, 2)));
       const auto f =
@@ -147,8 +118,8 @@ PathTracer<russian_roulette, sampling, mis>::MISSample(
   return vec3{0.f};
 }
 
-template <bool russian_roulette, Sampling sampling, bool mis>
-glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightDirect(
+template <bool russian_roulette, bool mis>
+glm::vec3 PathTracer<russian_roulette, mis>::LightDirect(
     const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_o,
     const MaterialRef &mat) const {
   using namespace glm;
@@ -156,7 +127,7 @@ glm::vec3 PathTracer<russian_roulette, sampling, mis>::LightDirect(
   auto radiance = vec3{0.f};
 
   if constexpr (mis) {
-    radiance += MISSample<true>(x, n, SampleBrdf(mat, n, w_o), w_o, mat);
+    radiance += MISSample<true>(x, n, scene_.Sample(mat, n, w_o), w_o, mat);
     for (const auto &light : scene_.lights) {
       const auto w_i = normalize(light->Sample() - x);
       radiance +=

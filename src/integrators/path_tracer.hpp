@@ -6,9 +6,7 @@
 #include "../samplers/sampler.hpp"
 #include "integrator.hpp"
 
-enum class Sampling { Hemisphere, Cosine, BRDF };
-
-template <bool russian_roulette, Sampling sampling, bool mis>
+template <bool russian_roulette, bool mis>
 class PathTracer : public Integrator {
  public:
   template <bool T = russian_roulette, typename... Args>
@@ -24,23 +22,7 @@ class PathTracer : public Integrator {
         max_depth_(max_depth) {}
 
  private:
-  glm::vec3 ShadePixel(const glm::vec2& pixel) const override {
-    auto radiance = glm::vec3(0.f);
-    for (int i = 0; i < num_pixel_sample_; ++i) {
-      radiance +=
-          Sample(camera_.GenerateEyeRay(pixel + glm::vec2{Random(), Random()}));
-    }
-    return radiance / float(num_pixel_sample_);
-  }
-
-  /**
-   * Dispatch calls to different types of importance sampling
-   */
-  glm::vec3 Sample(const Ray& ray) const;
-  glm::vec3 SampleBrdf(const MaterialRef& mat, const glm::vec3& n,
-                       const glm::vec3& w_o) const;
-  float PdfBrdf(const MaterialRef& mat, const glm::vec3& n,
-                const glm::vec3& w_i, const glm::vec3& w_o) const;
+  glm::vec3 ShadePixel(const glm::vec2& pixel) const override;
 
   glm::vec3 LightIndirect(
       const glm::vec3& x, const glm::vec3& n, const glm::vec3& w_o,
@@ -65,9 +47,9 @@ class PathTracer : public Integrator {
   int num_pixel_sample_;
 };
 
-template <Sampling sampling, bool mis>
-using PathTracerNEE = PathTracer<false, sampling, mis>;
-template <Sampling sampling, bool mis>
-using PathTracerRR = PathTracer<true, sampling, mis>;
+template <bool mis>
+using PathTracerNEE = PathTracer<false, mis>;
+template <bool mis>
+using PathTracerRR = PathTracer<true, mis>;
 
 #include "path_tracer.inc"
