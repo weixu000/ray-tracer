@@ -33,8 +33,9 @@ class PathTracer : public Integrator {
   glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,
                         const glm::vec3& w_o, const MaterialRef& mat) const;
 
-  float PdfLight(const glm::vec3& x, const glm::vec3& n,
-                 const glm::vec3& w_i) const;
+  template <bool T = mis>
+  std::enable_if_t<T, float> PdfLight(const glm::vec3& x, const glm::vec3& n,
+                                      const glm::vec3& w_i) const;
 
   template <bool brdf, bool T = mis>
   std::enable_if_t<T, glm::vec3> MISSample(const glm::vec3& x,

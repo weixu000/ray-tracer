@@ -77,9 +77,9 @@ glm::vec3 PathTracer<russian_roulette, mis>::LightIndirect(
 }
 
 template <bool russian_roulette, bool mis>
-float PathTracer<russian_roulette, mis>::PdfLight(const glm::vec3 &x,
-                                                  const glm::vec3 &n,
-                                                  const glm::vec3 &w_i) const {
+template <bool T>
+std::enable_if_t<T, float> PathTracer<russian_roulette, mis>::PdfLight(
+    const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_i) const {
   using namespace glm;
 
   const auto ray = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
