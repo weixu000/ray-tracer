@@ -12,8 +12,6 @@
 #include "integrators/path_tracer.hpp"
 #include "lights/quad_light.hpp"
 #include "registry_factory.hpp"
-#include "shapes/sphere.hpp"
-#include "shapes/triangle.hpp"
 
 using namespace std;
 using namespace glm;
@@ -38,6 +36,36 @@ basic_istream<CharT, Traits> &operator>>(basic_istream<CharT, Traits> &is,
 
 using Options = unordered_map<string, string>;
 
+auto GetMaterial(Scene &scene, const string &material_type, const vec3 &k_d,
+                 const vec3 &k_s, float s, float alpha, float n) {
+  if (material_type == "phong")
+    return scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
+        Lambertian(k_d), Phong(k_s, s));
+  else if (material_type == "ggx")
+    return scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
+        Lambertian(k_d), GGXReflection(k_s, alpha));
+  else if (material_type == "refractive")
+    return scene.AddMaterial<ComposedMaterial<GGXReflection, GGXRefraction>>(
+        GGXReflection(n, alpha), GGXRefraction(n, alpha));
+  else
+    throw runtime_error("Unkown material.");
+}
+
+auto GetTriangles(const uvec3 &t, const vector<vec3> &verts,
+                  const mat4 &transform) {
+  return array<vec3, 3>{
+      transform * vec4(verts[t[0]], 1.f),
+      transform * vec4(verts[t[1]], 1.f),
+      transform * vec4(verts[t[2]], 1.f),
+  };
+}
+
+auto GetSphere(const vec3 &p, float r, const mat4 &transform) {
+  const auto world = scale(translate(transform, p), vec3(r));
+  const auto normal = mat3(inverse(transpose(mat3(transform))));
+  return make_tuple(world, normal);
+}
+
 auto LoadScene(ifstream &fs) {
   Scene scene;
   Options others;
@@ -59,20 +87,12 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      MaterialRef mat;
-      if (material_type == "phong")
-        mat = scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
-            Lambertian(k_d), Phong(k_s, s));
-      else if (material_type == "ggx")
-        mat = scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
-            Lambertian(k_d), GGXReflection(k_s, alpha));
-      else if (material_type == "refractive")
-        mat = scene.AddMaterial<ComposedMaterial<GGXReflection, GGXRefraction>>(
-            GGXReflection(n, alpha), GGXRefraction(n, alpha));
-      else
-        throw std::runtime_error("Unkown material.");
-      scene.shapes.emplace_back(make_unique<Sphere>(
-          position, rad, StackMatrices(transform_stack), mat));
+      const auto [world, normal] =
+          GetSphere(position, rad, StackMatrices(transform_stack));
+      scene.sphere_world_transforms.emplace_back(world);
+      scene.sphere_normal_transforms.emplace_back(normal);
+      scene.sphere_materials.emplace_back(
+          GetMaterial(scene, material_type, k_d, k_s, s, alpha, n));
     } else if (command == "maxverts") {
       continue;  // Not used
     } else if (command == "vertex") {
@@ -80,23 +100,12 @@ auto LoadScene(ifstream &fs) {
       ss >> v;
       verts.push_back(v);
     } else if (command == "tri") {
-      ivec3 t;
+      uvec3 t;
       ss >> t;
-      MaterialRef mat;
-      if (material_type == "phong")
-        mat = scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
-            Lambertian(k_d), Phong(k_s, s));
-      else if (material_type == "ggx")
-        mat = scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
-            Lambertian(k_d), GGXReflection(k_s, alpha));
-      else if (material_type == "refractive")
-        mat = scene.AddMaterial<ComposedMaterial<GGXReflection, GGXRefraction>>(
-            GGXReflection(n, alpha), GGXRefraction(n, alpha));
-      else
-        throw std::runtime_error("Unkown material.");
-      scene.shapes.emplace_back(
-          make_unique<Triangle>(StackMatrices(transform_stack), verts[t[0]],
-                                verts[t[1]], verts[t[2]], mat));
+      scene.triangles.emplace_back(
+          GetTriangles(t, verts, StackMatrices(transform_stack)));
+      scene.triangle_materials.emplace_back(
+          GetMaterial(scene, material_type, k_d, k_s, s, alpha, n));
     } else if (command == "maxvertnorms") {
       continue;  // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {
@@ -122,10 +131,9 @@ auto LoadScene(ifstream &fs) {
     } else if (command == "popTransform") {
       transform_stack.pop_back();
     } else if (command == "directional") {
-      throw std::runtime_error(
-          "Directional light removed form implementation.");
+      throw runtime_error("Directional light removed form implementation.");
     } else if (command == "point") {
-      throw std::runtime_error("Point light removed form implementation.");
+      throw runtime_error("Point light removed form implementation.");
     } else if (command == "quadLight") {
       vec3 v0, e1, e2, intensity;
       ss >> v0 >> e1 >> e2 >> intensity;
@@ -148,7 +156,7 @@ auto LoadScene(ifstream &fs) {
       others[command] = option;
     }
   }
-  return make_tuple<Scene, Options>(move(scene), move(others));
+  return make_tuple(move(scene), move(others));
 }
 
 auto LoadCamera(const Options &options) {
@@ -188,7 +196,7 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
                                       Camera camera) {
   if (options.at("integrator") == "pathtracer") {
     if (GetDefault(options, "nexteventestimation", "off"s) == "off") {
-      throw std::runtime_error("Simple path tracer removed");
+      throw runtime_error("Simple path tracer removed");
     }
 
     const auto mis =
@@ -209,42 +217,38 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
     cout << "Gamma: " << gamma << endl;
 
     if (GetDefault(options, "importancesampling", "hemisphere"s) != "brdf") {
-      throw std::runtime_error("Importance sampling other than BRDF removed");
+      throw runtime_error("Importance sampling other than BRDF removed");
     }
 
     if (russian_roulette) {
-      return RegistryRR::Get(mis, spp, std::move(scene), std::move(camera),
-                             gamma);
+      return RegistryRR::Get(mis, spp, move(scene), move(camera), gamma);
     } else {
-      return RegistryNEE::Get(mis, max_depth, spp, std::move(scene),
-                              std::move(camera), gamma);
+      return RegistryNEE::Get(mis, max_depth, spp, move(scene), move(camera),
+                              gamma);
     }
   } else {
-    throw std::runtime_error("Unknown integrator: " + options.at("integrator"));
+    throw runtime_error("Unknown integrator: " + options.at("integrator"));
   }
 }
 }  // namespace
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    throw std::runtime_error("Incorrect command-line options");
+    throw runtime_error("Incorrect command-line options");
   }
   string input_path = argv[1];
   ifstream fs(input_path);
   if (!fs.is_open()) {
-    throw std::runtime_error("Cannot open input file: " + input_path);
+    throw runtime_error("Cannot open input file: " + input_path);
   }
   cout << "Parsing: " << input_path << endl;
 
   auto [scene, options] = LoadScene(fs);
   auto camera = LoadCamera(options);
-  const auto integrator =
-      LoadIntegrator(options, std::move(scene), std::move(camera));
+  const auto integrator = LoadIntegrator(options, move(scene), move(camera));
 
-  istringstream ss;
-  string output_file;
-  ss.str(options.at("output"));
-  ss >> output_file;
+  const auto output_file = GetDefault(options, "output", ""s);
+  if (output_file.empty()) throw runtime_error("Output file unspecified");
 
   integrator->Render().WriteTo(output_file);
   cout << "Output: " << output_file << endl;

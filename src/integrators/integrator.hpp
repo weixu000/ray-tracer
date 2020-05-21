@@ -5,27 +5,32 @@
 #include "../camera.hpp"
 #include "../image.hpp"
 #include "../scene.hpp"
-#include "../shapes/bvh.hpp"
+
+typedef struct RTCDeviceTy *RTCDevice;
+typedef struct RTCSceneTy *RTCScene;
+
+/**
+ * local info of the primitive hit by the ray
+ */
+struct RayHit {
+  float t;
+  glm::vec3 n;
+  MaterialRef mat;
+};
 
 /**
  * Use camera to render the scene
  */
 class Integrator {
  public:
-  Integrator(Scene scene, Camera camera, float gamma)
-      : scene_(std::move(scene)),
-        camera_(std::move(camera)),
-        gamma_(gamma),
-        bvh_(std::move(scene_.shapes)) {}
+  Integrator(Scene scene, Camera camera, float gamma);
 
-  virtual ~Integrator() = default;
+  virtual ~Integrator();
 
   Image Render() const;
 
  protected:
-  std::optional<RayHit> TraceShapes(const Ray &ray) const {
-    return bvh_.Hit(ray);
-  }
+  std::optional<RayHit> TraceShapes(const Ray &ray) const;
 
   std::optional<LightEmission> TraceLights(const Ray &ray) const {
     std::optional<LightEmission> ret;
@@ -58,5 +63,7 @@ class Integrator {
   virtual glm::vec3 ShadePixel(const glm::vec2 &pixel) const = 0;
 
   float gamma_;
-  BVH bvh_;
+
+  RTCDevice embree_device_;
+  RTCScene embree_scene_;
 };
