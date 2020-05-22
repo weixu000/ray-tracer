@@ -1,3 +1,5 @@
+#include <tiny_obj_loader.h>
+
 #include <fstream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -68,6 +70,55 @@ auto GetSphere(const vec3 &p, float r, const mat4 &transform) {
   return make_tuple(world, normal);
 }
 
+auto GetObj(const string &inputfile, const mat4 &transform,
+            const MaterialRef &mat, Scene &scene) {
+  tinyobj::attrib_t attrib;
+  vector<tinyobj::shape_t> shapes;
+  vector<tinyobj::material_t> materials;
+
+  string warn;
+  string err;
+
+  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
+                              inputfile.c_str());
+
+  if (!warn.empty()) {
+    cout << warn << endl;
+  }
+
+  if (!err.empty()) {
+    cerr << err << endl;
+  }
+
+  if (!ret) {
+    exit(1);
+  }
+
+  // Loop over shapes
+  for (size_t s = 0; s < shapes.size(); s++) {
+    // Loop over faces(polygon)
+    size_t index_offset = 0;
+    for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+      int fv = shapes[s].mesh.num_face_vertices[f];
+      array<vec3, 3> triangle;
+
+      // Loop over vertices in the face.
+      for (size_t v = 0; v < fv; v++) {
+        // access to vertex
+        tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+        tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
+        tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
+        tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
+        triangle[v] = transform * vec4{vx, vy, vz, 1.f};
+      }
+      index_offset += fv;
+
+      scene.triangles.emplace_back(triangle);
+      scene.triangle_materials.emplace_back(mat);
+    }
+  }
+}
+
 auto LoadScene(ifstream &fs) {
   Scene scene;
   Options others;
@@ -108,6 +159,11 @@ auto LoadScene(ifstream &fs) {
           GetTriangles(t, verts, StackMatrices(transform_stack)));
       scene.triangle_materials.emplace_back(
           GetMaterial(scene, material_type, k_d, k_s, s, alpha, n));
+    } else if (command == "obj") {
+      string file_path;
+      getline(ss >> ws, file_path);
+      GetObj(file_path, StackMatrices(transform_stack),
+             GetMaterial(scene, material_type, k_d, k_s, s, alpha, n), scene);
     } else if (command == "maxvertnorms") {
       continue;  // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {
