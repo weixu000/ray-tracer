@@ -34,7 +34,7 @@ class Phong : public Material {
             const glm::vec3 &w_o) const override {
     using namespace glm;
     const auto r = reflect(-w_i, n);
-    return (s_ + 1) * TWO_OVER_PI * pow(max(0.f, dot(r, w_o)), s_);
+    return (s_ + 1) * ONE_OVER_2PI * pow(max(0.f, dot(r, w_o)), s_);
   }
 
   float Power(const glm::vec3 &n, const glm::vec3 &w_i) const override {

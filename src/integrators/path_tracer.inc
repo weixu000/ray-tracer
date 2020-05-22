@@ -1,5 +1,4 @@
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/norm.hpp>
 #include <vector>
@@ -15,7 +14,7 @@ glm::vec3 PathTracer<russian_roulette, mis>::ShadePixel(
   for (int i = 0; i < num_pixel_sample_; ++i) {
     const auto ray = camera_.GenerateEyeRay(pixel + vec2{Random(), Random()});
     radiance += Trace(
-        ray, [&](const LightEmission &emission) { return emission.L_e; },
+        ray, [&](const Emission &emission) { return emission.L_e; },
         [&](const RayHit &hit) {
           const auto x = ray(hit.t), n = hit.n;
           const auto w_o = -ray.direction;
@@ -58,7 +57,7 @@ glm::vec3 PathTracer<russian_roulette, mis>::LightIndirect(
   const auto ray_i = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
 
   return Trace(
-      ray_i, [&](const LightEmission &emission) { return vec3(0.f); },
+      ray_i, [&](const Emission &emission) { return vec3(0.f); },
       [&](const RayHit &hit) {
         const auto x_i = ray_i(hit.t), n_i = hit.n;
         if constexpr (russian_roulette) {

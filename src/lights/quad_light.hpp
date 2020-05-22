@@ -9,11 +9,7 @@ class QuadLight : public Light {
 
   glm::vec3 Sample() const override;
 
-  std::optional<LightEmission> Hit(const Ray &ray) const override;
-
-  glm::vec3 GetRadiance() const { return radiance_; }
-
-  glm::vec3 GetIrradianceVector(const glm::vec3 &r) const;
+  std::optional<Emission> Hit(const Ray &ray) const override;
 
  private:
   glm::vec3 radiance_;

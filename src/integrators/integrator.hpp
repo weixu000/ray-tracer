@@ -32,8 +32,8 @@ class Integrator {
  protected:
   std::optional<RayHit> TraceShapes(const Ray &ray) const;
 
-  std::optional<LightEmission> TraceLights(const Ray &ray) const {
-    std::optional<LightEmission> ret;
+  std::optional<Emission> TraceLights(const Ray &ray) const {
+    std::optional<Emission> ret;
     for (const auto &light : lights_) {
       if (const auto hit = light->Hit(ray); hit && (!ret || hit->t < ret->t)) {
         ret = hit;

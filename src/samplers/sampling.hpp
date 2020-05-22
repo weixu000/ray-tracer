@@ -8,7 +8,7 @@
 constexpr auto PI = glm::pi<float>();
 constexpr auto TWO_PI = glm::two_pi<float>();
 constexpr auto ONE_OVER_PI = glm::one_over_pi<float>();
-constexpr auto TWO_OVER_PI = glm::one_over_two_pi<float>();
+constexpr auto ONE_OVER_2PI = glm::one_over_two_pi<float>();
 
 inline float Random() {
   static thread_local std::default_random_engine gen{std::random_device()()};

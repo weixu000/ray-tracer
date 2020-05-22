@@ -20,34 +20,15 @@ glm::vec3 QuadLight::Sample() const {
   return p;
 }
 
-std::optional<LightEmission> QuadLight::Hit(const Ray &ray) const {
+std::optional<Emission> QuadLight::Hit(const Ray &ray) const {
   const auto o = ray.origin, d = ray.direction;
   const auto res = inverse(mat3(e1_, e2_, -d)) * (o - v0_);
   const auto u = res[0], v = res[1], t = res[2];
 
   if (u >= 0 && u <= 1 && v >= 0 && v <= 1 && t >= 0) {
-    return LightEmission{t, dot(d, normal_) > 0 ? radiance_ : vec3{0.f},
-                         normal_, area_, this};
+    return Emission{t, dot(d, normal_) > 0 ? radiance_ : vec3{0.f}, normal_,
+                    area_, this};
   } else {
     return std::nullopt;
   }
-}
-
-glm::vec3 QuadLight::GetIrradianceVector(const glm::vec3 &r) const {
-  glm::vec3 e[4];
-  for (int i = 0; i < 4; ++i) {
-    e[i] = normalize(v_[i] - r);
-  }
-  float theta[4];
-  glm::vec3 gamma[4];
-  for (int i = 0; i < 4; ++i) {
-    theta[i] = acos(dot(e[i], e[(i + 1) % 4]));
-    gamma[i] = normalize(cross(e[i], e[(i + 1) % 4]));
-  }
-
-  glm::vec3 phi(0.f);
-  for (int i = 0; i < 4; ++i) {
-    phi += theta[i] * gamma[i];
-  }
-  return phi / 2.f;
 }
