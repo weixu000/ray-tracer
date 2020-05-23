@@ -17,7 +17,8 @@ class Kernel {
          std::vector<glm::mat3> sphere_normal_transforms,
          std::vector<MaterialRef> sphere_materials);
 
-  std::optional<RayHit> TraceShapes(const Ray& ray) const;
+  std::optional<RayHit> TraceShapes(const Ray& ray, float tnear,
+                                    float tfar) const;
 
  private:
   void LoadEmbreeTriangles(

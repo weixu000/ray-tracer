@@ -19,9 +19,13 @@ class Integrator {
   Image Render() const;
 
  protected:
-  std::optional<RayHit> TraceShapes(const Ray &ray) const {
-    return kernel_.TraceShapes(ray);
+  std::optional<RayHit> TraceShapes(const Ray &ray, float tnear = 0.f,
+                                    float tfar = FLT_MAX) const {
+    return kernel_.TraceShapes(ray, tnear, tfar);
   }
+
+  const std::vector<RayHit> &TraceShapesAll(const Ray &ray, float tnear = 0.f,
+                                            float tfar = FLT_MAX) const;
 
   std::optional<Emission> TraceLights(const Ray &ray) const {
     std::optional<Emission> ret;

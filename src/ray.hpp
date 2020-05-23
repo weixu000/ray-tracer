@@ -22,4 +22,5 @@ struct RayHit {
   float t;
   glm::vec3 n;
   MaterialRef mat;
+  glm::vec3 p;
 };

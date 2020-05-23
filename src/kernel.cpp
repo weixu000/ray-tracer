@@ -84,7 +84,8 @@ void Kernel::loadEmbreeSpheres(const vector<mat4>& transforms) {
   rtcReleaseScene(sphere_scene);
 }
 
-optional<RayHit> Kernel::TraceShapes(const Ray& ray) const {
+optional<RayHit> Kernel::TraceShapes(const Ray& ray, float tnear,
+                                     float tfar) const {
   RTCIntersectContext context;
   rtcInitIntersectContext(&context);
 
@@ -95,8 +96,8 @@ optional<RayHit> Kernel::TraceShapes(const Ray& ray) const {
   rayHit.ray.dir_x = ray.direction.x;
   rayHit.ray.dir_y = ray.direction.y;
   rayHit.ray.dir_z = ray.direction.z;
-  rayHit.ray.tnear = 0.0001f;
-  rayHit.ray.tfar = numeric_limits<float>::infinity();
+  rayHit.ray.tnear = tnear;
+  rayHit.ray.tfar = tfar;
   rayHit.ray.mask = 0;
   rayHit.ray.flags = 0;
   rayHit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
@@ -107,6 +108,7 @@ optional<RayHit> Kernel::TraceShapes(const Ray& ray) const {
   if (rayHit.hit.geomID != RTC_INVALID_GEOMETRY_ID) {
     RayHit hit;
     hit.t = rayHit.ray.tfar;
+    hit.p = ray(hit.t);
     const auto hitNormal =
         normalize(vec3(rayHit.hit.Ng_x, rayHit.hit.Ng_y, rayHit.hit.Ng_z));
     if (rayHit.hit.instID[0] == RTC_INVALID_GEOMETRY_ID) {

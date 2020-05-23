@@ -63,3 +63,19 @@ Image Integrator::Render() const {
 
   return output;
 }
+
+const vector<RayHit>& Integrator::TraceShapesAll(const Ray& ray, float tnear,
+                                                 float tfar) const {
+  using namespace glm;
+  thread_local vector<RayHit> hits;
+  hits.clear();
+
+  while (tnear < tfar) {
+    if (const auto hit = TraceShapes(ray, tnear, tfar)) {
+      hits.emplace_back(*hit);
+      tnear = hit->t + 0.0001f;
+    } else
+      break;
+  }
+  return hits;
+}
