@@ -26,12 +26,12 @@ class PathTracer : public Integrator {
 
   glm::vec3 LightIndirect(
       const glm::vec3& x, const glm::vec3& n, const glm::vec3& w_o,
-      const MaterialRef& mat,
+      const Material* mat,
       std::conditional_t<russian_roulette, const glm::vec3&, int>
           throughput_or_depth) const;
 
   glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,
-                        const glm::vec3& w_o, const MaterialRef& mat) const;
+                        const glm::vec3& w_o, const Material* mat) const;
 
   template <bool T = mis>
   std::enable_if_t<T, float> PdfLight(const glm::vec3& x, const glm::vec3& n,
@@ -42,7 +42,7 @@ class PathTracer : public Integrator {
                                            const glm::vec3& n,
                                            const glm::vec3& w_i,
                                            const glm::vec3& w_o,
-                                           const MaterialRef& mat) const;
+                                           const Material* mat) const;
 
   std::conditional_t<russian_roulette, std::monostate, int> max_depth_;
   int num_pixel_sample_;
