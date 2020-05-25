@@ -3,6 +3,8 @@
 #include <glm/gtx/component_wise.hpp>
 
 #include "../samplers/sampling.hpp"
+#include "composed_bsdf.hpp"
+#include "lambertian.hpp"
 #include "material.hpp"
 
 template <typename T>
@@ -33,7 +35,7 @@ inline glm::vec3 SampleHalfVector(const glm::vec3 &n, float a) {
 }
 
 struct GGXBRDF : public BSDF {
-  glm::vec3 Brdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
     using namespace glm;
 
     const auto w_i_n = dot(w_i, n), w_o_n = dot(w_o, n);
@@ -63,7 +65,7 @@ struct GGXBRDF : public BSDF {
     return reflect(-w_i, h);
   }
 
-  float Power(const glm::vec3 &w_i) const override {
+  float Weight(const glm::vec3 &w_i) const override {
     return glm::compAdd(F(glm::dot(w_i, n), k_s));
   }
 
@@ -74,16 +76,21 @@ struct GGXBRDF : public BSDF {
 
 class GGXReflection : public Material {
  public:
-  GGXReflection(const glm::vec3 &k_s, float alpha) : alpha_(alpha), k_s_(k_s) {}
+  GGXReflection(const glm::vec3 &k_d, const glm::vec3 &k_s, float alpha)
+      : k_d_(k_d), alpha_(alpha), k_s_(k_s) {}
 
-  GGXReflection(float n, float alpha)
-      : alpha_(alpha), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
+  GGXReflection(const glm::vec3 &k_d, float n, float alpha)
+      : k_d_(k_d), alpha_(alpha), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
 
   const BSDF *GetBSDF(const glm::vec3 &n) const override {
-    thread_local GGXBRDF bsdf;
-    bsdf.n = n;
-    bsdf.alpha = alpha_;
-    bsdf.k_s = k_s_;
+    thread_local ComposedBSDF<LambertianBRDF, GGXBRDF> bsdf;
+
+    std::get<0>(bsdf.bsdfs).n = n;
+    std::get<0>(bsdf.bsdfs).k_d = k_d_;
+
+    std::get<1>(bsdf.bsdfs).n = n;
+    std::get<1>(bsdf.bsdfs).alpha = alpha_;
+    std::get<1>(bsdf.bsdfs).k_s = k_s_;
 
     return &bsdf;
   }
@@ -91,10 +98,11 @@ class GGXReflection : public Material {
  private:
   float alpha_;
   glm::vec3 k_s_;
+  glm::vec3 k_d_;
 };
 
 struct GGXBTDF : public BSDF {
-  glm::vec3 Brdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
     using namespace glm;
 
     const auto w_i_n = dot(w_i, n), w_o_n = dot(w_o, n);
@@ -127,7 +135,7 @@ struct GGXBTDF : public BSDF {
     return refract(-w_i, sign(dot(w_i, h)) * h, RefractionRatio(dot(w_i, n)));
   }
 
-  float Power(const glm::vec3 &w_i) const override {
+  float Weight(const glm::vec3 &w_i) const override {
     return 1 - F(glm::dot(w_i, n), k_s);
   }
 

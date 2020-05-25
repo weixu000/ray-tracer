@@ -13,9 +13,7 @@
 
 #include "integrators/path_tracer.hpp"
 #include "lights/quad_light.hpp"
-#include "materials/composed_material.hpp"
 #include "materials/ggx.hpp"
-#include "materials/lambertian.hpp"
 #include "materials/phong.hpp"
 #include "registry_factory.hpp"
 
@@ -45,14 +43,11 @@ using Options = unordered_map<string, string>;
 auto GetMaterial(Scene &scene, const string &material_type, const vec3 &k_d,
                  const vec3 &k_s, float s, float alpha, float n) {
   if (material_type == "phong")
-    return scene.AddMaterial<ComposedMaterial<Lambertian, Phong>>(
-        Lambertian(k_d), Phong(k_s, s));
+    return scene.AddMaterial<Phong>(k_d, k_s, s);
   else if (material_type == "ggx")
-    return scene.AddMaterial<ComposedMaterial<Lambertian, GGXReflection>>(
-        Lambertian(k_d), GGXReflection(k_s, alpha));
+    return scene.AddMaterial<GGXReflection>(k_d, k_s, alpha);
   else if (material_type == "refractive")
-    return scene.AddMaterial<ComposedMaterial<GGXReflection, GGXRefraction>>(
-        GGXReflection(n, alpha), GGXRefraction(n, alpha));
+    return scene.AddMaterial<GGXRefraction>(n, alpha);
   else {
     cerr << "Unkown material:" << material_type << endl;
     exit(EXIT_FAILURE);

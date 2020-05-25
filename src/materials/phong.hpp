@@ -3,10 +3,12 @@
 #include <glm/gtx/component_wise.hpp>
 
 #include "../samplers/sampling.hpp"
+#include "composed_bsdf.hpp"
+#include "lambertian.hpp"
 #include "material.hpp"
 
 struct PhongBRDF : public BSDF {
-  glm::vec3 Brdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
     using namespace glm;
     const auto r = reflect(-w_i, n);
     return k_s * (s + 2) / 2.f * pow(max(0.f, dot(r, w_o)), s) * ONE_OVER_PI;
@@ -26,7 +28,9 @@ struct PhongBRDF : public BSDF {
     return (s + 1) * ONE_OVER_2PI * pow(max(0.f, dot(r, w_o)), s);
   }
 
-  float Power(const glm::vec3 &w_i) const override { return glm::compAdd(k_s); }
+  float Weight(const glm::vec3 &w_i) const override {
+    return glm::compAdd(k_s);
+  }
 
   glm::vec3 n;
   float s;
@@ -35,17 +39,24 @@ struct PhongBRDF : public BSDF {
 
 class Phong : public Material {
  public:
-  Phong(const glm::vec3 &k_s, float s) : s_(s), k_s_(k_s) {}
+  Phong(const glm::vec3 &k_d, const glm::vec3 &k_s, float s)
+      : k_d_(k_d), s_(s), k_s_(k_s) {}
 
   const BSDF *GetBSDF(const glm::vec3 &n) const override {
-    thread_local PhongBRDF bsdf;
-    bsdf.n = n;
-    bsdf.s = s_;
-    bsdf.k_s = k_s_;
+    thread_local ComposedBSDF<LambertianBRDF, PhongBRDF> bsdf;
+
+    std::get<0>(bsdf.bsdfs).n = n;
+    std::get<0>(bsdf.bsdfs).k_d = k_d_;
+
+    std::get<1>(bsdf.bsdfs).n = n;
+    std::get<1>(bsdf.bsdfs).s = s_;
+    std::get<1>(bsdf.bsdfs).k_s = k_s_;
+
     return &bsdf;
   }
 
  private:
   float s_;
   glm::vec3 k_s_;
+  glm::vec3 k_d_;
 };

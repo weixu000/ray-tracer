@@ -3,10 +3,10 @@
 #include <glm/gtx/component_wise.hpp>
 
 #include "../samplers/sampling.hpp"
-#include "material.hpp"
+#include "bsdf.hpp"
 
 struct LambertianBRDF : public BSDF {
-  glm::vec3 Brdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
     if (dot(w_i, n) > 0)
       return k_d * ONE_OVER_PI;
     else
@@ -25,23 +25,10 @@ struct LambertianBRDF : public BSDF {
     return max(0.f, dot(n, w_o)) * ONE_OVER_PI;
   }
 
-  float Power(const glm::vec3 &w_i) const override { return glm::compAdd(k_d); }
+  float Weight(const glm::vec3 &w_i) const override {
+    return glm::compAdd(k_d);
+  }
 
   glm::vec3 n;
   glm::vec3 k_d;
-};
-
-class Lambertian : public Material {
- public:
-  Lambertian(const glm::vec3 &k_d) : k_d_(k_d) {}
-
-  const BSDF *GetBSDF(const glm::vec3 &n) const override {
-    thread_local LambertianBRDF bsdf;
-    bsdf.n = n;
-    bsdf.k_d = k_d_;
-    return &bsdf;
-  }
-
- private:
-  glm::vec3 k_d_;
 };

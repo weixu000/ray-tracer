@@ -26,7 +26,9 @@ class PathTracer : public Integrator {
     const BSDF* bsdf;
     const glm::vec3 w_o;
 
-    glm::vec3 Value(const glm::vec3& w_i) const { return bsdf->Brdf(w_i, w_o); }
+    glm::vec3 Value(const glm::vec3& w_i) const {
+      return bsdf->Value(w_i, w_o);
+    }
 
     glm::vec3 Sample() const { return bsdf->Sample(w_o); }
 
