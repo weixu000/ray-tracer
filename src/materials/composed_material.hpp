@@ -6,58 +6,63 @@
 #include "../samplers/sampling.hpp"
 #include "material.hpp"
 
+template <size_t N>
+struct ComposedBSDF : public BSDF {
+  glm::vec3 Brdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+    auto x = glm::vec3{0.f};
+    for (const auto m : bsdfs) {
+      x += m->Brdf(w_i, w_o);
+    }
+    return x;
+  }
+
+  glm::vec3 Sample(const glm::vec3 &w_i) const override {
+    using namespace glm;
+    const auto power = Power(w_i);
+    std::array<float, N> probs;
+    for (size_t i = 0; i < N; ++i) {
+      probs[i] = bsdfs[i]->Power(w_i) / power;
+    }
+    auto t = Random();
+    size_t i = 0;
+    for (; i < N; ++i) {
+      t -= probs[i];
+      if (t <= 0) return bsdfs[i]->Sample(w_i);
+    }
+    return bsdfs[N - 1]->Sample(w_i);
+  }
+
+  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+    const auto p = Power(w_i);
+    float x = 0.f;
+    for (const auto m : bsdfs) {
+      x += m->Pdf(w_i, w_o) * m->Power(w_i) / p;
+    }
+    return x;
+  }
+
+  float Power(const glm::vec3 &w_i) const override {
+    float x = 0.f;
+    for (const auto m : bsdfs) {
+      x += m->Power(w_i);
+    }
+    return x;
+  }
+
+  std::array<const BSDF *, N> bsdfs;
+};
+
 template <typename... Ts>
 class ComposedMaterial : public Material {
  public:
   ComposedMaterial(Ts &&... args) : materials_(std::forward<Ts>(args)...) {}
 
-  friend bool operator==(const ComposedMaterial &x, const ComposedMaterial &y) {
-    return x.materials_ == y.materials_;
-  }
-
-  friend bool operator!=(const ComposedMaterial &x, const ComposedMaterial &y) {
-    return !(x == y);
-  }
-
-  glm::vec3 Brdf(const glm::vec3 &n, const glm::vec3 &w_i,
-                 const glm::vec3 &w_o) const override {
-    return std::apply(
-        [&](const auto &... m) { return (m.Brdf(n, w_i, w_o) + ...); },
-        materials_);
-  }
-
-  glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_i) const override {
-    using namespace glm;
-    const auto power = Power(n, w_i);
-    const auto probs = std::apply(
-        [&](const auto &... m) {
-          return std::array<float, sizeof...(Ts)>{m.Power(n, w_i) / power...};
-        },
-        materials_);
-    auto t = Random();
-    size_t i = 0;
-    for (; i < sizeof...(Ts); ++i) {
-      t -= probs[i];
-      if (t <= 0)
-        return Call(i, [&](const auto &m) { return m.Sample(n, w_i); });
+  const BSDF *GetBSDF(const glm::vec3 &n) const override {
+    thread_local ComposedBSDF<sizeof...(Ts)> bsdf;
+    for (int i = 0; i < sizeof...(Ts); ++i) {
+      bsdf.bsdfs[i] = Call(i, [&n](const auto &m) { return m.GetBSDF(n); });
     }
-    return Call(sizeof...(Ts) - 1,
-                [&](const auto &m) { return m.Sample(n, w_i); });
-  }
-
-  float Pdf(const glm::vec3 &n, const glm::vec3 &w_i,
-            const glm::vec3 &w_o) const override {
-    const auto power = Power(n, w_i);
-    return std::apply(
-        [&](const auto &... m) {
-          return ((m.Pdf(n, w_i, w_o) * m.Power(n, w_i) / power) + ...);
-        },
-        materials_);
-  }
-
-  float Power(const glm::vec3 &n, const glm::vec3 &w_i) const override {
-    return std::apply(
-        [&](const auto &... m) { return (m.Power(n, w_i) + ...); }, materials_);
+    return &bsdf;
   }
 
  private:

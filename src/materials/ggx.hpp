@@ -32,6 +32,46 @@ inline glm::vec3 SampleHalfVector(const glm::vec3 &n, float a) {
   return ConvertSpherical(theta, phi, n);
 }
 
+struct GGXBRDF : public BSDF {
+  glm::vec3 Brdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+    using namespace glm;
+
+    const auto w_i_n = dot(w_i, n), w_o_n = dot(w_o, n);
+    const auto h = sign(w_i_n) * normalize(w_i + w_o);
+    const auto h_n = dot(h, n), w_i_h = dot(w_i, h), w_o_h = dot(w_o, h);
+    if (h_n > 0 && w_i_h * w_i_n > 0 && w_o_h * w_o_n > 0) {
+      return F(w_i_h, k_s) * G(w_i_n, w_o_n, alpha) * D(h_n, alpha) /
+             (4 * abs(w_i_n * w_o_n));
+    } else
+      return vec3{0.f};
+  }
+
+  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+    using namespace glm;
+
+    const auto h = sign(dot(w_i, n)) * normalize(w_i + w_o);
+    const auto h_n = dot(h, n);
+    if (h_n > 0)
+      return D(h_n, alpha) * h_n / (4 * abs(dot(h, w_o)));
+    else
+      return 0.f;
+  }
+
+  glm::vec3 Sample(const glm::vec3 &w_i) const override {
+    using namespace glm;
+    const auto h = SampleHalfVector(n, alpha);
+    return reflect(-w_i, h);
+  }
+
+  float Power(const glm::vec3 &w_i) const override {
+    return glm::compAdd(F(glm::dot(w_i, n), k_s));
+  }
+
+  glm::vec3 n;
+  float alpha;
+  glm::vec3 k_s;
+};
+
 class GGXReflection : public Material {
  public:
   GGXReflection(const glm::vec3 &k_s, float alpha) : alpha_(alpha), k_s_(k_s) {}
@@ -39,48 +79,13 @@ class GGXReflection : public Material {
   GGXReflection(float n, float alpha)
       : alpha_(alpha), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
 
-  friend bool operator==(const GGXReflection &x, const GGXReflection &y) {
-    return x.k_s_ == y.k_s_ && x.alpha_ == y.alpha_;
-  }
+  const BSDF *GetBSDF(const glm::vec3 &n) const override {
+    thread_local GGXBRDF bsdf;
+    bsdf.n = n;
+    bsdf.alpha = alpha_;
+    bsdf.k_s = k_s_;
 
-  friend bool operator!=(const GGXReflection &x, const GGXReflection &y) {
-    return !(x == y);
-  }
-
-  glm::vec3 Brdf(const glm::vec3 &n, const glm::vec3 &w_i,
-                 const glm::vec3 &w_o) const override {
-    using namespace glm;
-
-    const auto w_i_n = dot(w_i, n), w_o_n = dot(w_o, n);
-    const auto h = sign(w_i_n) * normalize(w_i + w_o);
-    const auto h_n = dot(h, n), w_i_h = dot(w_i, h), w_o_h = dot(w_o, h);
-    if (h_n > 0 && w_i_h * w_i_n > 0 && w_o_h * w_o_n > 0) {
-      return F(w_i_h, k_s_) * G(w_i_n, w_o_n, alpha_) * D(h_n, alpha_) /
-             (4 * abs(w_i_n * w_o_n));
-    } else
-      return vec3{0.f};
-  }
-
-  float Pdf(const glm::vec3 &n, const glm::vec3 &w_i,
-            const glm::vec3 &w_o) const override {
-    using namespace glm;
-
-    const auto h = sign(dot(w_i, n)) * normalize(w_i + w_o);
-    const auto h_n = dot(h, n);
-    if (h_n > 0)
-      return D(h_n, alpha_) * h_n / (4 * abs(dot(h, w_o)));
-    else
-      return 0.f;
-  }
-
-  glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_i) const override {
-    using namespace glm;
-    const auto h = SampleHalfVector(n, alpha_);
-    return reflect(-w_i, h);
-  }
-
-  float Power(const glm::vec3 &n, const glm::vec3 &w_i) const override {
-    return glm::compAdd(F(glm::dot(w_i, n), k_s_));
+    return &bsdf;
   }
 
  private:
@@ -88,21 +93,8 @@ class GGXReflection : public Material {
   glm::vec3 k_s_;
 };
 
-class GGXRefraction : public Material {
- public:
-  GGXRefraction(float n, float alpha)
-      : alpha_(alpha), n_(n), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
-
-  friend bool operator==(const GGXRefraction &x, const GGXRefraction &y) {
-    return x.n_ == y.n_ && x.alpha_ == y.alpha_;
-  }
-
-  friend bool operator!=(const GGXRefraction &x, const GGXRefraction &y) {
-    return !(x == y);
-  }
-
-  glm::vec3 Brdf(const glm::vec3 &n, const glm::vec3 &w_i,
-                 const glm::vec3 &w_o) const override {
+struct GGXBTDF : public BSDF {
+  glm::vec3 Brdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
     using namespace glm;
 
     const auto w_i_n = dot(w_i, n), w_o_n = dot(w_o, n);
@@ -110,44 +102,65 @@ class GGXRefraction : public Material {
     const auto h = -normalize(eta * w_i + w_o);
     const auto h_n = dot(h, n), w_i_h = dot(w_i, h), w_o_h = dot(w_o, h);
     if (h_n > 0 && w_i_h * w_i_n > 0 && w_o_h * w_o_n > 0) {
-      return vec3{abs(w_i_h * w_o_h) * (1.f - F(w_i_h, k_s_)) *
-                  G(w_i_n, w_o_n, alpha_) * D(h_n, alpha_) /
-                  abs(w_i_n * w_o_n) / pow(eta * w_i_h + w_o_h, 2.f)};
+      return vec3{abs(w_i_h * w_o_h) * (1.f - F(w_i_h, k_s)) *
+                  G(w_i_n, w_o_n, alpha) * D(h_n, alpha) / abs(w_i_n * w_o_n) /
+                  pow(eta * w_i_h + w_o_h, 2.f)};
     }
     return vec3{0.f};
   }
 
-  float Pdf(const glm::vec3 &n, const glm::vec3 &w_i,
-            const glm::vec3 &w_o) const override {
+  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
     using namespace glm;
 
     const auto eta = RefractionRatio(dot(w_i, n));
     const auto h = -normalize(eta * w_i + w_o);
     const auto h_n = dot(h, n), w_i_h = dot(w_i, h), w_o_h = dot(w_o, h);
     if (h_n > 0) {
-      return D(h_n, alpha_) * abs(h_n * w_o_h) / pow(eta * w_i_h + w_o_h, 2.f);
+      return D(h_n, alpha) * abs(h_n * w_o_h) / pow(eta * w_i_h + w_o_h, 2.f);
     } else
       return 0.f;
   }
 
-  glm::vec3 Sample(const glm::vec3 &n, const glm::vec3 &w_i) const override {
+  glm::vec3 Sample(const glm::vec3 &w_i) const override {
     using namespace glm;
-    const auto h = SampleHalfVector(n, alpha_);
+    const auto h = SampleHalfVector(n, alpha);
     return refract(-w_i, sign(dot(w_i, h)) * h, RefractionRatio(dot(w_i, n)));
   }
 
-  float Power(const glm::vec3 &n, const glm::vec3 &w_i) const override {
-    return 1 - F(glm::dot(w_i, n), k_s_);
+  float Power(const glm::vec3 &w_i) const override {
+    return 1 - F(glm::dot(w_i, n), k_s);
   }
+
+  glm::vec3 n;
+  float alpha;
+  float ior;
+  float k_s;
 
  private:
   float RefractionRatio(float v_n) const {
-    const auto eta_i = v_n > 0 ? 1.f : n_;
-    const auto eta_o = v_n > 0 ? n_ : 1.f;
+    const auto eta_i = v_n > 0 ? 1.f : ior;
+    const auto eta_o = v_n > 0 ? ior : 1.f;
     return eta_i / eta_o;
   }
+};
 
+class GGXRefraction : public Material {
+ public:
+  GGXRefraction(float n, float alpha)
+      : alpha_(alpha), ior_(n), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
+
+  const BSDF *GetBSDF(const glm::vec3 &n) const override {
+    thread_local GGXBTDF bsdf;
+    bsdf.n = n;
+    bsdf.alpha = alpha_;
+    bsdf.ior = ior_;
+    bsdf.k_s = k_s_;
+
+    return &bsdf;
+  }
+
+ private:
   float alpha_;
-  float n_;
+  float ior_;
   float k_s_;
 };
