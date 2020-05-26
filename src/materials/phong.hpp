@@ -41,7 +41,7 @@ class Phong {
   Phong(const glm::vec3 &k_d, const glm::vec3 &k_s, float s)
       : k_d_(k_d), s_(s), k_s_(k_s) {}
 
-  auto GetBSDF(const glm::vec3 &n) const {
+  auto GetBxDF(const glm::vec3 &n) const {
     ComposedBSDF<LambertianBRDF, PhongBRDF> bsdf;
 
     std::get<0>(bsdf.bsdfs).n = n;

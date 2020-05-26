@@ -3,7 +3,7 @@
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/norm.hpp>
 
-#include "../materials/BSSRDF.hpp"
+#include "../materials/bssrdf.hpp"
 #include "integrator.hpp"
 
 class VolumePathIntegrator : public Integrator {

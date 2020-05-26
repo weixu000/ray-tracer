@@ -33,6 +33,9 @@ class PathTracer : public Integrator {
                       const glm::vec3& w_i, const Bounce& bounce, float pdf,
                       float other_pdf) const;
 
+  template <typename F>
+  glm::vec3 BounceOut(const RayHit& hit, const glm::vec3& w_o, F&& f) const;
+
   int max_depth_;
   int num_pixel_sample_;
 

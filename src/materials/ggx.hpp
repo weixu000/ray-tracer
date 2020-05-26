@@ -81,7 +81,7 @@ class GGXReflection {
   GGXReflection(const glm::vec3 &k_d, float n, float alpha)
       : k_d_(k_d), alpha_(alpha), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
 
-  auto GetBSDF(const glm::vec3 &n) const {
+  auto GetBxDF(const glm::vec3 &n) const {
     ComposedBSDF<LambertianBRDF, GGXBRDF> bsdf;
 
     std::get<0>(bsdf.bsdfs).n = n;
@@ -156,7 +156,7 @@ class GGXRefraction {
   GGXRefraction(float n, float alpha)
       : alpha_(alpha), ior_(n), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
 
-  auto GetBSDF(const glm::vec3 &n) const {
+  auto GetBxDF(const glm::vec3 &n) const {
     GGXBTDF bsdf;
     bsdf.n = n;
     bsdf.alpha = alpha_;

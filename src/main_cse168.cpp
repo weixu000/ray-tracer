@@ -46,6 +46,8 @@ auto GetMaterial(Scene &scene, const string &material_type, const vec3 &k_d,
     return scene.AddMaterial<GGXReflection>(k_d, k_s, alpha);
   else if (material_type == "refractive")
     return scene.AddMaterial<GGXRefraction>(n, alpha);
+  else if (material_type == "subsurface")
+    return scene.AddMaterial<SubSurfaceMaterial>();
   else {
     cerr << "Unkown material:" << material_type << endl;
     exit(EXIT_FAILURE);
