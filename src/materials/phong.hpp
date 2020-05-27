@@ -1,19 +1,20 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 
 #include "../samplers/sampling.hpp"
 #include "composed_bsdf.hpp"
 #include "lambertian.hpp"
 
-struct PhongBRDF : public BSDF {
-  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+struct PhongBRDF {
+  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
     using namespace glm;
     const auto r = reflect(-w_i, n);
     return k_s * (s + 2) / 2.f * pow(max(0.f, dot(r, w_o)), s) * ONE_OVER_PI;
   }
 
-  glm::vec3 Sample(const glm::vec3 &w_i) const override {
+  glm::vec3 Sample(const glm::vec3 &w_i) const {
     using namespace glm;
     const auto xi_1 = Random(), xi_2 = Random();
     const auto theta = acos(pow(xi_1, 1 / (s + 1))), phi = TWO_PI * xi_2;
@@ -21,15 +22,13 @@ struct PhongBRDF : public BSDF {
     return ConvertSpherical(theta, phi, r);
   }
 
-  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
     using namespace glm;
     const auto r = reflect(-w_i, n);
     return (s + 1) * ONE_OVER_2PI * pow(max(0.f, dot(r, w_o)), s);
   }
 
-  float Weight(const glm::vec3 &w_i) const override {
-    return glm::compAdd(k_s);
-  }
+  float Weight(const glm::vec3 &w_i) const { return glm::compAdd(k_s); }
 
   glm::vec3 n;
   float s;

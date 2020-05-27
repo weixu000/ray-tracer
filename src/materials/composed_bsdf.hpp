@@ -1,18 +1,17 @@
 #pragma once
-
+#include <glm/glm.hpp>
 #include <tuple>
 
 #include "../samplers/sampling.hpp"
-#include "bsdf.hpp"
 
 template <typename... Ts>
-struct ComposedBSDF : public BSDF {
-  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+struct ComposedBSDF {
+  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
     return std::apply(
         [&](const auto &... m) { return (m.Value(w_i, w_o) + ...); }, bsdfs);
   }
 
-  glm::vec3 Sample(const glm::vec3 &w_i) const override {
+  glm::vec3 Sample(const glm::vec3 &w_i) const {
     using namespace glm;
     const auto weight = Weight(w_i);
     const auto probs = std::apply(
@@ -30,7 +29,7 @@ struct ComposedBSDF : public BSDF {
                 [&](const auto &m) { return m.Sample(w_i); });
   }
 
-  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
     const auto weight = Weight(w_i);
     return std::apply(
         [&](const auto &... m) {
@@ -39,7 +38,7 @@ struct ComposedBSDF : public BSDF {
         bsdfs);
   }
 
-  float Weight(const glm::vec3 &w_i) const override {
+  float Weight(const glm::vec3 &w_i) const {
     return std::apply([&](const auto &... m) { return (m.Weight(w_i) + ...); },
                       bsdfs);
   }

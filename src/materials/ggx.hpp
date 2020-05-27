@@ -33,8 +33,8 @@ inline glm::vec3 SampleHalfVector(const glm::vec3 &n, float a) {
   return ConvertSpherical(theta, phi, n);
 }
 
-struct GGXBRDF : public BSDF {
-  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+struct GGXBRDF {
+  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
     using namespace glm;
 
     const auto w_i_n = dot(w_i, n), w_o_n = dot(w_o, n);
@@ -47,7 +47,7 @@ struct GGXBRDF : public BSDF {
       return vec3{0.f};
   }
 
-  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
     using namespace glm;
 
     const auto h = sign(dot(w_i, n)) * normalize(w_i + w_o);
@@ -58,13 +58,13 @@ struct GGXBRDF : public BSDF {
       return 0.f;
   }
 
-  glm::vec3 Sample(const glm::vec3 &w_i) const override {
+  glm::vec3 Sample(const glm::vec3 &w_i) const {
     using namespace glm;
     const auto h = SampleHalfVector(n, alpha);
     return reflect(-w_i, h);
   }
 
-  float Weight(const glm::vec3 &w_i) const override {
+  float Weight(const glm::vec3 &w_i) const {
     return glm::compAdd(F(glm::dot(w_i, n), k_s));
   }
 
@@ -100,8 +100,8 @@ class GGXReflection {
   glm::vec3 k_d_;
 };
 
-struct GGXBTDF : public BSDF {
-  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+struct GGXBTDF {
+  glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
     using namespace glm;
 
     const auto w_i_n = dot(w_i, n), w_o_n = dot(w_o, n);
@@ -116,7 +116,7 @@ struct GGXBTDF : public BSDF {
     return vec3{0.f};
   }
 
-  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
+  float Pdf(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
     using namespace glm;
 
     const auto eta = RefractionRatio(dot(w_i, n));
@@ -128,13 +128,13 @@ struct GGXBTDF : public BSDF {
       return 0.f;
   }
 
-  glm::vec3 Sample(const glm::vec3 &w_i) const override {
+  glm::vec3 Sample(const glm::vec3 &w_i) const {
     using namespace glm;
     const auto h = SampleHalfVector(n, alpha);
     return refract(-w_i, sign(dot(w_i, h)) * h, RefractionRatio(dot(w_i, n)));
   }
 
-  float Weight(const glm::vec3 &w_i) const override {
+  float Weight(const glm::vec3 &w_i) const {
     return 1 - F(glm::dot(w_i, n), k_s);
   }
 
