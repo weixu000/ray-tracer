@@ -28,9 +28,10 @@ class PathTracer : public Integrator {
   float PdfLight(const glm::vec3& x, const glm::vec3& n,
                  const glm::vec3& w_i) const;
 
-  template <bool brdf, typename Bounce>
+  template <typename Bounce>
   glm::vec3 MISSample(const glm::vec3& x, const glm::vec3& n,
-                      const glm::vec3& w_i, const Bounce& bounce) const;
+                      const glm::vec3& w_i, const Bounce& bounce, float pdf,
+                      float other_pdf) const;
 
   int max_depth_;
   int num_pixel_sample_;
