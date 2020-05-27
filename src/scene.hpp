@@ -9,7 +9,6 @@
 #include "materials/phong.hpp"
 
 using Material = std::variant<GGXReflection, GGXRefraction, Phong>;
-using MaterialRef = size_t;
 
 /**
  * Hold primitives, lights, materials
