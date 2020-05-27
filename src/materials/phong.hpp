@@ -5,7 +5,6 @@
 #include "../samplers/sampling.hpp"
 #include "composed_bsdf.hpp"
 #include "lambertian.hpp"
-#include "material.hpp"
 
 struct PhongBRDF : public BSDF {
   glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const override {
@@ -37,13 +36,13 @@ struct PhongBRDF : public BSDF {
   glm::vec3 k_s;
 };
 
-class Phong : public Material {
+class Phong {
  public:
   Phong(const glm::vec3 &k_d, const glm::vec3 &k_s, float s)
       : k_d_(k_d), s_(s), k_s_(k_s) {}
 
-  const BSDF *GetBSDF(const glm::vec3 &n) const override {
-    thread_local ComposedBSDF<LambertianBRDF, PhongBRDF> bsdf;
+  auto GetBSDF(const glm::vec3 &n) const {
+    ComposedBSDF<LambertianBRDF, PhongBRDF> bsdf;
 
     std::get<0>(bsdf.bsdfs).n = n;
     std::get<0>(bsdf.bsdfs).k_d = k_d_;
@@ -52,7 +51,7 @@ class Phong : public Material {
     std::get<1>(bsdf.bsdfs).s = s_;
     std::get<1>(bsdf.bsdfs).k_s = k_s_;
 
-    return &bsdf;
+    return bsdf;
   }
 
  private:

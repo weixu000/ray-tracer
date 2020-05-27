@@ -15,7 +15,7 @@ typedef struct RTCSceneTy *RTCScene;
 struct RayHit {
   float t;
   glm::vec3 n;
-  const Material *mat;
+  MaterialRef mat;
 };
 
 /**
@@ -58,13 +58,13 @@ class Integrator {
 
   Camera camera_;
   std::vector<std::unique_ptr<const Light>> lights_;
+  std::vector<Material> materials_;
 
  private:
   virtual glm::vec3 ShadePixel(const glm::vec2 &pixel) const = 0;
 
-  std::vector<std::unique_ptr<const Material>> materials_;
-  std::vector<const Material *> triangle_materials_;
-  std::vector<const Material *> sphere_materials_;
+  std::vector<MaterialRef> triangle_materials_;
+  std::vector<MaterialRef> sphere_materials_;
 
   std::vector<glm::mat3> sphere_normal_transforms_;
 

@@ -13,8 +13,6 @@
 
 #include "integrators/path_tracer.hpp"
 #include "lights/quad_light.hpp"
-#include "materials/ggx.hpp"
-#include "materials/phong.hpp"
 #include "registry_factory.hpp"
 
 using namespace std;
@@ -69,8 +67,8 @@ auto GetSphere(const vec3 &p, float r, const mat4 &transform) {
   return make_tuple(world, normal);
 }
 
-auto GetObj(const string &inputfile, const mat4 &transform, const Material *mat,
-            Scene &scene) {
+auto GetObj(const string &inputfile, const mat4 &transform,
+            const MaterialRef &mat, Scene &scene) {
   tinyobj::attrib_t attrib;
   vector<tinyobj::shape_t> shapes;
   vector<tinyobj::material_t> materials;

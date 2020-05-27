@@ -22,26 +22,15 @@ class PathTracer : public Integrator {
         max_depth_(max_depth) {}
 
  private:
-  struct Bounce {
-    const BSDF* bsdf;
-    const glm::vec3 w_o;
-
-    glm::vec3 Value(const glm::vec3& w_i) const {
-      return bsdf->Value(w_i, w_o);
-    }
-
-    glm::vec3 Sample() const { return bsdf->Sample(w_o); }
-
-    float Pdf(const glm::vec3& w_i) const { return bsdf->Pdf(w_o, w_i); }
-  };
-
   glm::vec3 ShadePixel(const glm::vec2& pixel) const override;
 
+  template <typename Bounce>
   glm::vec3 LightIndirect(
       const glm::vec3& x, const glm::vec3& n, const Bounce& bounce,
       std::conditional_t<russian_roulette, const glm::vec3&, int>
           throughput_or_depth) const;
 
+  template <typename Bounce>
   glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,
                         const Bounce& bounce) const;
 
@@ -49,7 +38,7 @@ class PathTracer : public Integrator {
   std::enable_if_t<T, float> PdfLight(const glm::vec3& x, const glm::vec3& n,
                                       const glm::vec3& w_i) const;
 
-  template <bool brdf, bool T = mis>
+  template <bool brdf, bool T = mis, typename Bounce>
   std::enable_if_t<T, glm::vec3> MISSample(const glm::vec3& x,
                                            const glm::vec3& n,
                                            const glm::vec3& w_i,

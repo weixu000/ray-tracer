@@ -1,12 +1,15 @@
 #pragma once
 
 #include <memory>
-#include <optional>
-#include <string>
+#include <variant>
 #include <vector>
 
 #include "lights/light.hpp"
-#include "materials/material.hpp"
+#include "materials/ggx.hpp"
+#include "materials/phong.hpp"
+
+using Material = std::variant<GGXReflection, GGXRefraction, Phong>;
+using MaterialRef = size_t;
 
 /**
  * Hold primitives, lights, materials
@@ -15,19 +18,19 @@
 class Scene {
  public:
   std::vector<std::array<glm::vec3, 3>> triangles;
-  std::vector<const Material*> triangle_materials;
+  std::vector<MaterialRef> triangle_materials;
 
   std::vector<glm::mat4> sphere_world_transforms;
   std::vector<glm::mat3> sphere_normal_transforms;
-  std::vector<const Material*> sphere_materials;
+  std::vector<MaterialRef> sphere_materials;
 
   std::vector<std::unique_ptr<const Light>> lights;
 
-  std::vector<std::unique_ptr<const Material>> materials;
+  std::vector<Material> materials;
 
   template <typename T, typename... Args>
-  const Material* AddMaterial(Args... args) {
-    materials.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
-    return materials.back().get();
+  MaterialRef AddMaterial(Args... args) {
+    materials.emplace_back(T{std::forward<Args>(args)...});
+    return materials.size() - 1;
   }
 };

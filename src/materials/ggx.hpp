@@ -5,7 +5,6 @@
 #include "../samplers/sampling.hpp"
 #include "composed_bsdf.hpp"
 #include "lambertian.hpp"
-#include "material.hpp"
 
 template <typename T>
 inline T F(float w_i_h, T k_s) {
@@ -74,7 +73,7 @@ struct GGXBRDF : public BSDF {
   glm::vec3 k_s;
 };
 
-class GGXReflection : public Material {
+class GGXReflection {
  public:
   GGXReflection(const glm::vec3 &k_d, const glm::vec3 &k_s, float alpha)
       : k_d_(k_d), alpha_(alpha), k_s_(k_s) {}
@@ -82,8 +81,8 @@ class GGXReflection : public Material {
   GGXReflection(const glm::vec3 &k_d, float n, float alpha)
       : k_d_(k_d), alpha_(alpha), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
 
-  const BSDF *GetBSDF(const glm::vec3 &n) const override {
-    thread_local ComposedBSDF<LambertianBRDF, GGXBRDF> bsdf;
+  auto GetBSDF(const glm::vec3 &n) const {
+    ComposedBSDF<LambertianBRDF, GGXBRDF> bsdf;
 
     std::get<0>(bsdf.bsdfs).n = n;
     std::get<0>(bsdf.bsdfs).k_d = k_d_;
@@ -92,7 +91,7 @@ class GGXReflection : public Material {
     std::get<1>(bsdf.bsdfs).alpha = alpha_;
     std::get<1>(bsdf.bsdfs).k_s = k_s_;
 
-    return &bsdf;
+    return bsdf;
   }
 
  private:
@@ -152,19 +151,19 @@ struct GGXBTDF : public BSDF {
   }
 };
 
-class GGXRefraction : public Material {
+class GGXRefraction {
  public:
   GGXRefraction(float n, float alpha)
       : alpha_(alpha), ior_(n), k_s_(glm::pow((n - 1) / (n + 1), 2.f)) {}
 
-  const BSDF *GetBSDF(const glm::vec3 &n) const override {
-    thread_local GGXBTDF bsdf;
+  auto GetBSDF(const glm::vec3 &n) const {
+    GGXBTDF bsdf;
     bsdf.n = n;
     bsdf.alpha = alpha_;
     bsdf.ior = ior_;
     bsdf.k_s = k_s_;
 
-    return &bsdf;
+    return bsdf;
   }
 
  private:
