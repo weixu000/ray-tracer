@@ -1,56 +1,40 @@
 #pragma once
 
-#include <type_traits>
-#include <variant>
-
-#include "../samplers/sampler.hpp"
 #include "integrator.hpp"
 
-template <bool russian_roulette, bool mis>
 class PathTracer : public Integrator {
  public:
-  template <bool T = russian_roulette, typename... Args>
-  PathTracer(std::enable_if_t<T, int> num_pixel_sample, Args&&... args)
-      : Integrator(std::forward<Args>(args)...),
-        num_pixel_sample_(num_pixel_sample) {}
-
-  template <bool T = !russian_roulette, typename... Args>
-  PathTracer(std::enable_if_t<T, int> max_depth, int num_pixel_sample,
-             Args&&... args)
+  template <typename... Args>
+  PathTracer(bool russian_roulette, bool mis, int max_depth,
+             int num_pixel_sample, Args&&... args)
       : Integrator(std::forward<Args>(args)...),
         num_pixel_sample_(num_pixel_sample),
-        max_depth_(max_depth) {}
+        max_depth_(max_depth),
+        russian_roulette_(russian_roulette),
+        mis_(mis) {}
 
  private:
   glm::vec3 ShadePixel(const glm::vec2& pixel) const override;
 
   template <typename Bounce>
-  glm::vec3 LightIndirect(
-      const glm::vec3& x, const glm::vec3& n, const Bounce& bounce,
-      std::conditional_t<russian_roulette, const glm::vec3&, int>
-          throughput_or_depth) const;
+  glm::vec3 LightIndirect(const glm::vec3& x, const glm::vec3& n,
+                          const Bounce& bounce, const glm::vec3& throughput,
+                          int depth) const;
 
   template <typename Bounce>
   glm::vec3 LightDirect(const glm::vec3& x, const glm::vec3& n,
                         const Bounce& bounce) const;
 
-  template <bool T = mis>
-  std::enable_if_t<T, float> PdfLight(const glm::vec3& x, const glm::vec3& n,
-                                      const glm::vec3& w_i) const;
+  float PdfLight(const glm::vec3& x, const glm::vec3& n,
+                 const glm::vec3& w_i) const;
 
-  template <bool brdf, bool T = mis, typename Bounce>
-  std::enable_if_t<T, glm::vec3> MISSample(const glm::vec3& x,
-                                           const glm::vec3& n,
-                                           const glm::vec3& w_i,
-                                           const Bounce& bounce) const;
+  template <bool brdf, typename Bounce>
+  glm::vec3 MISSample(const glm::vec3& x, const glm::vec3& n,
+                      const glm::vec3& w_i, const Bounce& bounce) const;
 
-  std::conditional_t<russian_roulette, std::monostate, int> max_depth_;
+  int max_depth_;
   int num_pixel_sample_;
+
+  bool russian_roulette_;
+  bool mis_;
 };
-
-template <bool mis>
-using PathTracerNEE = PathTracer<false, mis>;
-template <bool mis>
-using PathTracerRR = PathTracer<true, mis>;
-
-#include "path_tracer.inc"

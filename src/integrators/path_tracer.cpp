@@ -1,7 +1,8 @@
+#include "path_tracer.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtx/component_wise.hpp>
 #include <glm/gtx/norm.hpp>
-#include <vector>
 
 #include "../samplers/sampling.hpp"
 
@@ -20,9 +21,7 @@ struct BSDFBounce {
 template <typename T, typename U>
 BSDFBounce(T, U) -> BSDFBounce<T>;  // this is a deduction guide
 
-template <bool russian_roulette, bool mis>
-glm::vec3 PathTracer<russian_roulette, mis>::ShadePixel(
-    const glm::vec2 &pixel) const {
+glm::vec3 PathTracer::ShadePixel(const glm::vec2 &pixel) const {
   using namespace glm;
 
   auto radiance = vec3(0.f);
@@ -36,13 +35,8 @@ glm::vec3 PathTracer<russian_roulette, mis>::ShadePixel(
           return std::visit(
               [&](const auto &m) {
                 const BSDFBounce bounce{m.GetBSDF(n), w_o};
-                if constexpr (russian_roulette) {
-                  return LightDirect(x, n, bounce) +
-                         LightIndirect(x, n, bounce, vec3(1.f));
-                } else {
-                  return LightDirect(x, n, bounce) +
-                         LightIndirect(x, n, bounce, max_depth_ - 1);
-                }
+                return LightDirect(x, n, bounce) +
+                       LightIndirect(x, n, bounce, vec3(1.f), max_depth_ - 1);
               },
               materials_[hit.mat]);
         });
@@ -50,22 +44,21 @@ glm::vec3 PathTracer<russian_roulette, mis>::ShadePixel(
   return radiance / float(num_pixel_sample_);
 }
 
-template <bool russian_roulette, bool mis>
 template <typename Bounce>
-glm::vec3 PathTracer<russian_roulette, mis>::LightIndirect(
-    const glm::vec3 &x, const glm::vec3 &n, const Bounce &bounce,
-    std::conditional_t<russian_roulette, const glm::vec3 &, int>
-        throughput_or_depth) const {
+glm::vec3 PathTracer::LightIndirect(const glm::vec3 &x, const glm::vec3 &n,
+                                    const Bounce &bounce,
+                                    const glm::vec3 &throughput,
+                                    int depth) const {
   using namespace glm;
 
   float q;
-  if constexpr (russian_roulette) {
-    q = 1 - min(1.f, compMax(throughput_or_depth));
+  if (russian_roulette_) {
+    q = 1 - min(1.f, compMax(throughput));
     if (Random() <= q) {
       return vec3(0.f);
     }
   } else {
-    if (throughput_or_depth <= 0) {
+    if (depth <= 0) {
       return vec3(0.f);
     }
   }
@@ -83,16 +76,16 @@ glm::vec3 PathTracer<russian_roulette, mis>::LightIndirect(
         return std::visit(
             [&](const auto &m) {
               const BSDFBounce b_i{m.GetBSDF(n_i), -w_i};
-              if constexpr (russian_roulette) {
+              if (russian_roulette_) {
                 const auto throughput_RR = bounce.Value(w_i) *
-                                           abs(dot(n, w_i)) / pdf *
-                                           throughput_or_depth / (1 - q);
+                                           abs(dot(n, w_i)) / pdf * throughput /
+                                           (1 - q);
                 return LightDirect(x_i, n_i, b_i) * throughput_RR +
-                       LightIndirect(x_i, n_i, b_i, throughput_RR);
+                       LightIndirect(x_i, n_i, b_i, throughput_RR, depth - 1);
               } else {
                 const auto L =
                     LightDirect(x_i, n_i, b_i) +
-                    LightIndirect(x_i, n_i, b_i, throughput_or_depth - 1);
+                    LightIndirect(x_i, n_i, b_i, throughput, depth - 1);
                 return L * bounce.Value(w_i) * abs(dot(n, w_i)) / pdf;
               }
             },
@@ -100,10 +93,8 @@ glm::vec3 PathTracer<russian_roulette, mis>::LightIndirect(
       });
 }
 
-template <bool russian_roulette, bool mis>
-template <bool T>
-std::enable_if_t<T, float> PathTracer<russian_roulette, mis>::PdfLight(
-    const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_i) const {
+float PathTracer::PdfLight(const glm::vec3 &x, const glm::vec3 &n,
+                           const glm::vec3 &w_i) const {
   using namespace glm;
 
   const auto ray = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
@@ -116,11 +107,10 @@ std::enable_if_t<T, float> PathTracer<russian_roulette, mis>::PdfLight(
   return pdf / lights_.size();
 }
 
-template <bool russian_roulette, bool mis>
-template <bool brdf, bool T, typename Bounce>
-std::enable_if_t<T, glm::vec3> PathTracer<russian_roulette, mis>::MISSample(
-    const glm::vec3 &x, const glm::vec3 &n, const glm::vec3 &w_i,
-    const Bounce &bounce) const {
+template <bool brdf, typename Bounce>
+glm::vec3 PathTracer::MISSample(const glm::vec3 &x, const glm::vec3 &n,
+                                const glm::vec3 &w_i,
+                                const Bounce &bounce) const {
   using namespace glm;
 
   if (length(w_i) == 0) return vec3{0.f};
@@ -139,15 +129,14 @@ std::enable_if_t<T, glm::vec3> PathTracer<russian_roulette, mis>::MISSample(
   return vec3{0.f};
 }
 
-template <bool russian_roulette, bool mis>
 template <typename Bounce>
-glm::vec3 PathTracer<russian_roulette, mis>::LightDirect(
-    const glm::vec3 &x, const glm::vec3 &n, const Bounce &bounce) const {
+glm::vec3 PathTracer::LightDirect(const glm::vec3 &x, const glm::vec3 &n,
+                                  const Bounce &bounce) const {
   using namespace glm;
 
   auto radiance = vec3{0.f};
 
-  if constexpr (mis) {
+  if (mis_) {
     radiance += MISSample<true>(x, n, bounce.Sample(), bounce);
     for (const auto &light : lights_) {
       const auto w_i = normalize(light->Sample() - x);

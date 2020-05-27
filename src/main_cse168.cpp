@@ -13,7 +13,6 @@
 
 #include "integrators/path_tracer.hpp"
 #include "lights/quad_light.hpp"
-#include "registry_factory.hpp"
 
 using namespace std;
 using namespace glm;
@@ -230,15 +229,6 @@ auto LoadCamera(const Options &options) {
   return Camera(look_from, look_at, up, fov, width, height);
 }
 
-template <bool mis, template <auto...> typename T>
-using Entry = RegistryFactory<Integrator, bool>::Entry<mis, T>;
-template <typename... Ts>
-using Registry = RegistryFactory<Integrator, bool>::Registry<Ts...>;
-using RegistryNEE =
-    Registry<Entry<false, PathTracerNEE>, Entry<true, PathTracerNEE>>;
-using RegistryRR =
-    Registry<Entry<false, PathTracerRR>, Entry<true, PathTracerRR>>;
-
 template <typename C, typename K, typename V>
 V GetDefault(const C &m, const K &key, const V &defval) {
   const auto it = m.find(key);
@@ -279,12 +269,8 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
       exit(EXIT_FAILURE);
     }
 
-    if (russian_roulette) {
-      return RegistryRR::Get(mis, spp, move(scene), move(camera), gamma);
-    } else {
-      return RegistryNEE::Get(mis, max_depth, spp, move(scene), move(camera),
-                              gamma);
-    }
+    return make_unique<PathTracer>(russian_roulette, mis, max_depth, spp,
+                                   move(scene), move(camera), gamma);
   } else {
     cerr << "Unknown integrator: " << options.at("integrator") << endl;
     exit(EXIT_FAILURE);
