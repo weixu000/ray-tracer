@@ -20,11 +20,9 @@ void EmbreeErrorFunction(void*, RTCError error, const char* str) {
 Kernel::Kernel(const vector<array<vec3, 3>>& triangles,
                vector<MaterialRef> triangle_materials,
                const vector<mat4>& sphere_world_transforms,
-               vector<mat3> sphere_normal_transforms,
                vector<MaterialRef> sphere_materials)
     : triangle_materials_(move(triangle_materials)),
-      sphere_materials_(move(sphere_materials)),
-      sphere_normal_transforms_(move(sphere_normal_transforms)) {
+      sphere_materials_(move(sphere_materials)) {
   embree_device_ = rtcNewDevice(nullptr);
   if (!embree_device_)
     throw runtime_error("Could not initialize Embree device.");
@@ -79,6 +77,9 @@ void Kernel::loadEmbreeSpheres(const vector<mat4>& transforms) {
     rtcCommitGeometry(instance);
     rtcAttachGeometry(embree_scene_, instance);
     rtcReleaseGeometry(instance);
+
+    sphere_normal_transforms_.emplace_back(
+        mat3(inverse(transpose(mat3(transform)))));
   }
 
   rtcReleaseScene(sphere_scene);
@@ -122,4 +123,16 @@ optional<RayHit> Kernel::TraceShapes(const Ray& ray, float tnear,
     return hit;
   } else
     return nullopt;
+}
+
+void Kernel::TraceShapesAll(vector<RayHit>& out, const Ray& ray, float tnear,
+                            float tfar) const {
+  out.clear();
+  while (tnear < tfar) {
+    if (const auto hit = TraceShapes(ray, tnear, tfar)) {
+      out.emplace_back(*hit);
+      tnear = hit->t + 0.0001f;
+    } else
+      break;
+  }
 }

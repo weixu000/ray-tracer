@@ -14,11 +14,13 @@ class Kernel {
   Kernel(const std::vector<std::array<glm::vec3, 3>>& triangles,
          std::vector<MaterialRef> triangle_materials,
          const std::vector<glm::mat4>& sphere_world_transforms,
-         std::vector<glm::mat3> sphere_normal_transforms,
          std::vector<MaterialRef> sphere_materials);
 
-  std::optional<RayHit> TraceShapes(const Ray& ray, float tnear,
-                                    float tfar) const;
+  std::optional<RayHit> TraceShapes(const Ray& ray, float tnear = 0.f,
+                                    float tfar = FLT_MAX) const;
+
+  void TraceShapesAll(std::vector<RayHit>& out, const Ray& ray,
+                      float tnear = 0.f, float tfar = FLT_MAX) const;
 
  private:
   void LoadEmbreeTriangles(

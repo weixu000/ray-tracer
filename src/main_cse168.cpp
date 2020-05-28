@@ -65,8 +65,7 @@ auto GetTriangles(const uvec3 &t, const vector<vec3> &verts,
 
 auto GetSphere(const vec3 &p, float r, const mat4 &transform) {
   const auto world = scale(translate(transform, p), vec3(r));
-  const auto normal = mat3(inverse(transpose(mat3(transform))));
-  return make_tuple(world, normal);
+  return world;
 }
 
 auto GetObj(const string &inputfile, const mat4 &transform,
@@ -139,10 +138,9 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      const auto [world, normal] =
+      const auto world =
           GetSphere(position, rad, StackMatrices(transform_stack));
       scene.sphere_world_transforms.emplace_back(world);
-      scene.sphere_normal_transforms.emplace_back(normal);
       scene.sphere_materials.emplace_back(
           GetMaterial(scene, material_type, k_d, k_s, s, alpha, n));
     } else if (command == "maxverts") {

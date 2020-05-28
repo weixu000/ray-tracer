@@ -19,14 +19,6 @@ class Integrator {
   Image Render() const;
 
  protected:
-  std::optional<RayHit> TraceShapes(const Ray &ray, float tnear = 0.f,
-                                    float tfar = FLT_MAX) const {
-    return kernel_.TraceShapes(ray, tnear, tfar);
-  }
-
-  const std::vector<RayHit> &TraceShapesAll(const Ray &ray, float tnear = 0.f,
-                                            float tfar = FLT_MAX) const;
-
   std::optional<Emission> TraceLights(const Ray &ray) const {
     std::optional<Emission> ret;
     for (const auto &light : lights_) {
@@ -41,7 +33,7 @@ class Integrator {
   glm::vec3 Trace(const Ray &ray, T1 if_light, T2 if_shape,
                   const glm::vec3 &default_val = glm::vec3(0.f)) const {
     const auto light_hit = TraceLights(ray);
-    const auto shape_hit = TraceShapes(ray);
+    const auto shape_hit = kernel_.TraceShapes(ray);
     if (shape_hit && (!light_hit || shape_hit->t < light_hit->t)) {
       return if_shape(*shape_hit);
     } else if (light_hit) {
@@ -55,10 +47,10 @@ class Integrator {
   std::vector<std::unique_ptr<const Light>> lights_;
   std::vector<Material> materials_;
 
+  Kernel kernel_;
+
  private:
   virtual glm::vec3 ShadePixel(const glm::vec2 &pixel) const = 0;
 
   float gamma_;
-
-  Kernel kernel_;
 };

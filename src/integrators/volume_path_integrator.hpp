@@ -35,10 +35,9 @@ class VolumePathIntegrator : public Integrator {
                         const glm::vec3& w_o) const {
     using namespace glm;
 
-    if (const auto sample = bssrdf_.SamplePi(
-            x_o, n_o, [this](const Ray& ray, float tnear, float tfar) {
-              return TraceShapesAll(ray, tnear, tfar);
-            })) {
+    if (const auto sample = bssrdf_.SamplePi(x_o, n_o, [this](auto&&... args) {
+          kernel_.TraceShapesAll(std::forward<decltype(args)>(args)...);
+        })) {
       const auto [hit, pdf_x_i] = *sample;
       const auto x_i = hit.p;
       const auto n_i = hit.n;
@@ -52,7 +51,7 @@ class VolumePathIntegrator : public Integrator {
             Ray{x_i + sign(dot(w_i, n_i)) * n_i * SHADOW_EPSILON, w_i};
         if (const auto light_hit = TraceLights(ray_i);
             light_hit && light_hit->light == light.get()) {
-          if (const auto shadow_hit = TraceShapes(ray_i);
+          if (const auto shadow_hit = kernel_.TraceShapes(ray_i);
               !shadow_hit || shadow_hit->t > light_hit->t) {
             const auto n_l = light_hit->n;
             const auto G = abs(dot(n_i, w_i)) * max(0.f, dot(w_i, n_l)) /

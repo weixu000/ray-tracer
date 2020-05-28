@@ -86,7 +86,7 @@ vec3 PathTracer::LightDirect(const vec3 &x, const vec3 &n,
       const auto ray_i = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
       if (const auto light_hit = TraceLights(ray_i);
           light_hit && light_hit->light == light.get()) {
-        if (const auto shadow_hit = TraceShapes(ray_i);
+        if (const auto shadow_hit = kernel_.TraceShapes(ray_i);
             !shadow_hit || shadow_hit->t > light_hit->t) {
           const auto n_l = light_hit->n;
           const auto G = abs(dot(n, w_i)) * glm::max(0.f, dot(w_i, n_l)) /
@@ -120,7 +120,7 @@ vec3 PathTracer::MISSample(const vec3 &x, const vec3 &n, const vec3 &w_i,
   if (length(w_i) == 0) return vec3{0.f};
   const auto ray_i = Ray{x + sign(dot(w_i, n)) * n * SHADOW_EPSILON, w_i};
   if (const auto light_hit = TraceLights(ray_i)) {
-    if (const auto shadow_hit = TraceShapes(ray_i);
+    if (const auto shadow_hit = kernel_.TraceShapes(ray_i);
         !shadow_hit || shadow_hit->t > light_hit->t) {
       if (pdf == 0) return vec3{0.f};
       const auto w = float(pow(pdf, 2) / (pow(pdf, 2) + pow(other_pdf, 2)));
@@ -170,10 +170,10 @@ glm::vec3 PathTracer::BounceOut(const RayHit &hit, const vec3 &w_o,
       [&](const auto &m) {
         const auto bxdf = m.GetBxDF(hit.n);
         if constexpr (std::is_same_v<std::decay_t<decltype(bxdf)>, BSSRDF>) {
-          if (const auto sample = bxdf.SamplePi(
-                  hit.p, hit.n,
-                  [this](const Ray &ray, float tnear, float tfar) {
-                    return TraceShapesAll(ray, tnear, tfar);
+          if (const auto sample =
+                  bxdf.SamplePi(hit.p, hit.n, [this](auto &&... args) {
+                    kernel_.TraceShapesAll(
+                        std::forward<decltype(args)>(args)...);
                   })) {
             const auto [hit_i, pdf_x_i] = *sample;
 

@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <iostream>
-#include <numeric>
 
 #ifdef MULTITHREADING
 #include "../thread_pool.hpp"
@@ -18,7 +17,6 @@ Integrator::Integrator(Scene scene, Camera camera, float gamma)
       lights_(move(scene.lights)),
       kernel_(move(scene.triangles), move(scene.triangle_materials),
               move(scene.sphere_world_transforms),
-              move(scene.sphere_normal_transforms),
               move(scene.sphere_materials)) {}
 
 Image Integrator::Render() const {
@@ -62,20 +60,4 @@ Image Integrator::Render() const {
        << endl;
 
   return output;
-}
-
-const vector<RayHit>& Integrator::TraceShapesAll(const Ray& ray, float tnear,
-                                                 float tfar) const {
-  using namespace glm;
-  thread_local vector<RayHit> hits;
-  hits.clear();
-
-  while (tnear < tfar) {
-    if (const auto hit = TraceShapes(ray, tnear, tfar)) {
-      hits.emplace_back(*hit);
-      tnear = hit->t + 0.0001f;
-    } else
-      break;
-  }
-  return hits;
 }

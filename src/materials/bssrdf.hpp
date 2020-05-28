@@ -27,8 +27,9 @@ struct BSSRDF {
     const auto s = SampleR();
     const auto frame = mat3(orientation(n_o, {0, 0, 1}));
     const auto half_l = sqrt(pow(r_max, 2.f) - length2(s));
-    const auto &hits =
-        hit_func(Ray{frame * vec3{s, half_l} + p_o, -n_o}, 0.f, 2 * half_l);
+
+    thread_local std::vector<RayHit> hits;
+    hit_func(hits, Ray{frame * vec3{s, half_l} + p_o, -n_o}, 0.f, 2 * half_l);
     if (hits.empty())
       return std::nullopt;
     else {

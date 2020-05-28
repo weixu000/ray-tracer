@@ -22,7 +22,6 @@ class Scene {
   std::vector<MaterialRef> triangle_materials;
 
   std::vector<glm::mat4> sphere_world_transforms;
-  std::vector<glm::mat3> sphere_normal_transforms;
   std::vector<MaterialRef> sphere_materials;
 
   std::vector<std::unique_ptr<const Light>> lights;
