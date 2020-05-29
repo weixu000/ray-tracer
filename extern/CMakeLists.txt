@@ -1,6 +1,0 @@
-file(GLOB EXTERN_LIBS LIST_DIRECTORIES true CONFIGURE_DEPENDS *)
-foreach (EXTERN_LIB ${EXTERN_LIBS})
-  if (IS_DIRECTORY "${EXTERN_LIB}")
-    add_subdirectory("${EXTERN_LIB}")
-  endif ()
-endforeach ()
