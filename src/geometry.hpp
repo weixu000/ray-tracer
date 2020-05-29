@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <variant>
 #include <vector>
 
 #include "ray.hpp"
@@ -14,3 +15,5 @@ struct Sphere {
   glm::mat4 transform;
   MaterialRef material;
 };
+
+using Geometry = std::variant<Mesh, Sphere>;

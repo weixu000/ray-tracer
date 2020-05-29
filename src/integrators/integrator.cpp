@@ -15,7 +15,7 @@ Integrator::Integrator(Scene scene, Camera camera, float gamma)
       gamma_(gamma),
       materials_(move(scene.materials)),
       lights_(move(scene.lights)),
-      kernel_(scene.meshes, scene.spheres) {}
+      kernel_(move(scene.geometries)) {}
 
 Image Integrator::Render() const {
   using namespace glm;

@@ -12,7 +12,7 @@ typedef struct RTCSceneTy* RTCScene;
 
 class Kernel {
  public:
-  Kernel(const std::vector<Mesh>& meshes, const std::vector<Sphere>& spheres);
+  Kernel(std::vector<Geometry> geometries);
 
   std::optional<RayHit> TraceShapes(const Ray& ray, float tnear = 0.f,
                                     float tfar = FLT_MAX) const;
@@ -21,14 +21,11 @@ class Kernel {
                       float tnear = 0.f, float tfar = FLT_MAX) const;
 
  private:
-  void LoadEmbreeTriangles(const std::vector<Mesh>& meshes);
+  void LoadEmbreeMeshes();
 
-  void loadEmbreeSpheres(const std::vector<Sphere>& spheres);
+  void loadEmbreeSpheres();
 
-  std::vector<MaterialRef> triangle_materials_;
-  std::vector<MaterialRef> sphere_materials_;
-
-  std::vector<glm::mat3> sphere_normal_transforms_;
+  std::vector<Geometry> geometries_;
 
   RTCDevice embree_device_;
   RTCScene embree_scene_;

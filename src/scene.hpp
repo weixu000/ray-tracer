@@ -19,12 +19,9 @@ using Material =
  */
 class Scene {
  public:
-  std::vector<Mesh> meshes;
-  std::vector<Sphere> spheres;
-
-  std::vector<std::unique_ptr<const Light>> lights;
-
+  std::vector<Geometry> geometries;
   std::vector<Material> materials;
+  std::vector<std::unique_ptr<const Light>> lights;
 
   template <typename T, typename... Args>
   MaterialRef AddMaterial(Args... args) {

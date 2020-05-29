@@ -141,7 +141,7 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      scene.spheres.emplace_back(
+      scene.geometries.emplace_back(
           Sphere{GetSphere(position, rad, StackMatrices(transform_stack)),
                  GetMaterial(scene, material_type, k_d, k_s, s, alpha, n)});
     } else if (command == "maxverts") {
@@ -155,14 +155,14 @@ auto LoadScene(ifstream &fs) {
       ss >> t;
       const auto triangle =
           GetTriangles(t, verts, StackMatrices(transform_stack));
-      scene.meshes.emplace_back(
+      scene.geometries.emplace_back(
           Mesh{{begin(triangle), end(triangle)},
                {{0, 1, 2}},
                GetMaterial(scene, material_type, k_d, k_s, s, alpha, n)});
     } else if (command == "obj") {
       string file_path;
       getline(ss >> ws, file_path);
-      scene.meshes.emplace_back(
+      scene.geometries.emplace_back(
           GetObj(file_path, StackMatrices(transform_stack),
                  GetMaterial(scene, material_type, k_d, k_s, s, alpha, n)));
     } else if (command == "maxvertnorms") {
