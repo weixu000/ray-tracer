@@ -69,7 +69,7 @@ auto GetSphere(const vec3 &p, float r, const mat4 &transform) {
 }
 
 auto GetObj(const string &inputfile, const mat4 &transform,
-            const MaterialRef &mat, Scene &scene) {
+            const MaterialRef &mat) {
   tinyobj::attrib_t attrib;
   vector<tinyobj::shape_t> shapes;
   vector<tinyobj::material_t> materials;
@@ -92,29 +92,32 @@ auto GetObj(const string &inputfile, const mat4 &transform,
     exit(1);
   }
 
+  Mesh mesh;
+  mesh.material = mat;
+  for (size_t i = 0; i < attrib.vertices.size(); i += 3) {
+    mesh.vertices.emplace_back(transform * vec4{attrib.vertices[i + 0],
+                                                attrib.vertices[i + 1],
+                                                attrib.vertices[i + 2], 1.f});
+  }
+
   // Loop over shapes
-  for (size_t s = 0; s < shapes.size(); s++) {
+  for (auto &shape : shapes) {
     // Loop over faces(polygon)
     size_t index_offset = 0;
-    for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-      int fv = shapes[s].mesh.num_face_vertices[f];
-      array<vec3, 3> triangle;
-
-      // Loop over vertices in the face.
-      for (size_t v = 0; v < fv; v++) {
-        // access to vertex
-        tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-        tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
-        tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
-        tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
-        triangle[v] = transform * vec4{vx, vy, vz, 1.f};
+    for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
+      int fv = shape.mesh.num_face_vertices[f];
+      if (fv != 3) {
+        cerr << "Not a triangular mesh" << endl;
+        exit(1);
       }
+      mesh.indices.emplace_back(
+          shape.mesh.indices[index_offset + 0].vertex_index,
+          shape.mesh.indices[index_offset + 1].vertex_index,
+          shape.mesh.indices[index_offset + 2].vertex_index);
       index_offset += fv;
-
-      scene.triangles.emplace_back(triangle);
-      scene.triangle_materials.emplace_back(mat);
     }
   }
+  return mesh;
 }
 
 auto LoadScene(ifstream &fs) {
@@ -138,11 +141,9 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      const auto world =
-          GetSphere(position, rad, StackMatrices(transform_stack));
-      scene.sphere_world_transforms.emplace_back(world);
-      scene.sphere_materials.emplace_back(
-          GetMaterial(scene, material_type, k_d, k_s, s, alpha, n));
+      scene.spheres.emplace_back(
+          Sphere{GetSphere(position, rad, StackMatrices(transform_stack)),
+                 GetMaterial(scene, material_type, k_d, k_s, s, alpha, n)});
     } else if (command == "maxverts") {
       continue;  // Not used
     } else if (command == "vertex") {
@@ -152,15 +153,18 @@ auto LoadScene(ifstream &fs) {
     } else if (command == "tri") {
       uvec3 t;
       ss >> t;
-      scene.triangles.emplace_back(
-          GetTriangles(t, verts, StackMatrices(transform_stack)));
-      scene.triangle_materials.emplace_back(
-          GetMaterial(scene, material_type, k_d, k_s, s, alpha, n));
+      const auto triangle =
+          GetTriangles(t, verts, StackMatrices(transform_stack));
+      scene.meshes.emplace_back(
+          Mesh{{begin(triangle), end(triangle)},
+               {{0, 1, 2}},
+               GetMaterial(scene, material_type, k_d, k_s, s, alpha, n)});
     } else if (command == "obj") {
       string file_path;
       getline(ss >> ws, file_path);
-      GetObj(file_path, StackMatrices(transform_stack),
-             GetMaterial(scene, material_type, k_d, k_s, s, alpha, n), scene);
+      scene.meshes.emplace_back(
+          GetObj(file_path, StackMatrices(transform_stack),
+                 GetMaterial(scene, material_type, k_d, k_s, s, alpha, n)));
     } else if (command == "maxvertnorms") {
       continue;  // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {

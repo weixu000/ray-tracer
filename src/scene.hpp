@@ -4,6 +4,7 @@
 #include <variant>
 #include <vector>
 
+#include "geometry.hpp"
 #include "lights/light.hpp"
 #include "materials/ggx.hpp"
 #include "materials/phong.hpp"
@@ -18,11 +19,8 @@ using Material =
  */
 class Scene {
  public:
-  std::vector<std::array<glm::vec3, 3>> triangles;
-  std::vector<MaterialRef> triangle_materials;
-
-  std::vector<glm::mat4> sphere_world_transforms;
-  std::vector<MaterialRef> sphere_materials;
+  std::vector<Mesh> meshes;
+  std::vector<Sphere> spheres;
 
   std::vector<std::unique_ptr<const Light>> lights;
 

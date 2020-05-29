@@ -4,6 +4,7 @@
 #include <optional>
 #include <vector>
 
+#include "geometry.hpp"
 #include "ray.hpp"
 
 typedef struct RTCDeviceTy* RTCDevice;
@@ -11,10 +12,7 @@ typedef struct RTCSceneTy* RTCScene;
 
 class Kernel {
  public:
-  Kernel(const std::vector<std::array<glm::vec3, 3>>& triangles,
-         std::vector<MaterialRef> triangle_materials,
-         const std::vector<glm::mat4>& sphere_world_transforms,
-         std::vector<MaterialRef> sphere_materials);
+  Kernel(const std::vector<Mesh>& meshes, const std::vector<Sphere>& spheres);
 
   std::optional<RayHit> TraceShapes(const Ray& ray, float tnear = 0.f,
                                     float tfar = FLT_MAX) const;
@@ -23,10 +21,9 @@ class Kernel {
                       float tnear = 0.f, float tfar = FLT_MAX) const;
 
  private:
-  void LoadEmbreeTriangles(
-      const std::vector<std::array<glm::vec3, 3>>& vertices);
+  void LoadEmbreeTriangles(const std::vector<Mesh>& meshes);
 
-  void loadEmbreeSpheres(const std::vector<glm::mat4>& transforms);
+  void loadEmbreeSpheres(const std::vector<Sphere>& spheres);
 
   std::vector<MaterialRef> triangle_materials_;
   std::vector<MaterialRef> sphere_materials_;
