@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "integrators/path_tracer.hpp"
-#include "integrators/volume_path_integrator.hpp"
 #include "lights/quad_light.hpp"
 
 using namespace std;
@@ -276,15 +275,6 @@ unique_ptr<Integrator> LoadIntegrator(const Options &options, Scene scene,
 
     return make_unique<PathTracer>(russian_roulette, mis, max_depth, spp,
                                    move(scene), move(camera), gamma);
-  } else if (options.at("integrator") == "volume") {
-    const auto spp = GetDefault(options, "spp", 1);
-    cout << "Sample per pixel: " << spp << endl;
-
-    const auto gamma = GetDefault(options, "gamma", 1.f);
-    cout << "Gamma: " << gamma << endl;
-
-    return make_unique<VolumePathIntegrator>(spp, move(scene), move(camera),
-                                             gamma);
   } else {
     cerr << "Unknown integrator: " << options.at("integrator") << endl;
     exit(EXIT_FAILURE);
