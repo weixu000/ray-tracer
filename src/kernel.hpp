@@ -17,8 +17,8 @@ class Kernel {
   std::optional<RayHit> TraceShapes(const Ray& ray, float tnear = 0.f,
                                     float tfar = FLT_MAX) const;
 
-  void TraceShapesAll(std::vector<RayHit>& out, const Ray& ray,
-                      float tnear = 0.f, float tfar = FLT_MAX) const;
+  void TraceGeometry(GeometryId id, std::vector<RayHit>& out, const Ray& ray,
+                     float tnear = 0.f, float tfar = FLT_MAX) const;
 
  private:
   void LoadEmbreeMeshes();

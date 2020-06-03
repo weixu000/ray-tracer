@@ -171,9 +171,9 @@ glm::vec3 PathTracer::BounceOut(const RayHit &hit, const vec3 &w_o,
         const auto bxdf = m.GetBxDF(hit.n);
         if constexpr (std::is_same_v<std::decay_t<decltype(bxdf)>, BSSRDF>) {
           if (const auto sample =
-                  bxdf.SamplePi(hit.p, hit.n, [this](auto &&... args) {
-                    kernel_.TraceShapesAll(
-                        std::forward<decltype(args)>(args)...);
+                  bxdf.SamplePi(hit.p, hit.n, [this, &hit](auto &&... args) {
+                    kernel_.TraceGeometry(
+                        hit.id, std::forward<decltype(args)>(args)...);
                   })) {
             const auto [hit_i, pdf_x_i] = *sample;
 

@@ -133,12 +133,14 @@ optional<RayHit> Kernel::TraceShapes(const Ray& ray, float tnear,
     return nullopt;
 }
 
-void Kernel::TraceShapesAll(vector<RayHit>& out, const Ray& ray, float tnear,
-                            float tfar) const {
+void Kernel::TraceGeometry(GeometryId id, vector<RayHit>& out, const Ray& ray,
+                           float tnear, float tfar) const {
   out.clear();
   while (tnear < tfar) {
     if (const auto hit = TraceShapes(ray, tnear, tfar)) {
-      out.emplace_back(*hit);
+      if (hit->id == id) {
+        out.emplace_back(*hit);
+      }
       tnear = hit->t + 0.0001f;
     } else
       break;
