@@ -7,6 +7,13 @@
 #include "../samplers/sampling.hpp"
 
 struct BSSRDF {
+  BSSRDF(float A = .8f, float n = 1.5f)
+      : A(A),
+        n(n),
+        k_s(glm::pow((n - 1) / (n + 1), 2)),
+        d(1 / (1.85 - A + 7 * glm::pow(glm::abs(A - .8f), 3.f))),
+        r_max(10 * d) {}
+
   glm::vec3 Value(const glm::vec3 &p_i, const glm::vec3 &n_i,
                   const glm::vec3 &w_i, const glm::vec3 &p_o,
                   const glm::vec3 &n_o, const glm::vec3 &w_o) const {
@@ -51,12 +58,6 @@ struct BSSRDF {
     return dot(n_i, w_i) / PI;
   }
 
-  float A = .8f;
-  float n = 1.5f;
-  float k_s = glm::pow((n - 1) / (n + 1), 2);
-  float d = 1 / (1.85 - A + 7 * glm::pow(glm::abs(A - .8f), 3.f));
-  float r_max = 10 * d;
-
  private:
   float F(float v_n) const {
     using namespace glm;
@@ -83,4 +84,10 @@ struct BSSRDF {
     const auto w_1 = 1 - exp(-r_max / d), w_2 = 3 * (1 - exp(-r_max / (3 * d)));
     return R(r) / (w_1 + w_2) * 4;
   }
+
+  float A;
+  float n;
+  float k_s;
+  float d;
+  float r_max;
 };
