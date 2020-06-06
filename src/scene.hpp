@@ -10,8 +10,7 @@
 #include "materials/phong.hpp"
 #include "materials/subsurface_material.hpp"
 
-using Material =
-    std::variant<GGXReflection, GGXRefraction, Phong, SubSurfaceMaterial>;
+using Material = std::variant<GGXRefraction, Phong, SubSurfaceMaterial>;
 
 /**
  * Hold primitives, lights, materials
