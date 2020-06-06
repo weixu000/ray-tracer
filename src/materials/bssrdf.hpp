@@ -11,6 +11,8 @@
 #include "../samplers/sampling.hpp"
 
 struct NormalizedDiffusionProfile {
+  NormalizedDiffusionProfile() = default;
+
   NormalizedDiffusionProfile(float d) : d(d), r_max(10 * d) {}
 
   float R(float r) const;
@@ -23,10 +25,10 @@ struct NormalizedDiffusionProfile {
 };
 
 struct BSSRDF {
-  BSSRDF(float A = .8f, float n = 1.5f)
-      : A(A),
-        R_0(glm::pow((n - 1) / (n + 1), 2)),
-        profile{1 / (1.85f - A + 7 * glm::pow(glm::abs(A - .8f), 3.f))} {}
+  BSSRDF() = default;
+
+  BSSRDF(float A, float n, float d)
+      : A{A}, R_0{glm::pow((n - 1) / (n + 1), 2.f)}, profile{d} {}
 
   glm::vec3 Value(const glm::vec3 &p_i, const glm::vec3 &n_i,
                   const glm::vec3 &w_i, const glm::vec3 &p_o,

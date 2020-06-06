@@ -3,10 +3,11 @@
 
 class SubSurfaceMaterial {
  public:
-  SubSurfaceMaterial(float albedo, float ior) : albedo_(albedo), ior_(ior) {}
+  SubSurfaceMaterial(float albedo, float ior, float d)
+      : albedo_(albedo), ior_(ior), d_(d) {}
 
-  auto GetBxDF(const glm::vec3 &n) const { return BSSRDF{albedo_, ior_}; }
+  auto GetBxDF(const glm::vec3 &n) const { return BSSRDF{albedo_, ior_, d_}; }
 
  private:
-  float albedo_, ior_;
+  float albedo_, ior_, d_;
 };

@@ -38,7 +38,8 @@ basic_istream<CharT, Traits> &operator>>(basic_istream<CharT, Traits> &is,
 using Options = unordered_map<string, string>;
 
 auto GetMaterial(Scene &scene, const string &material_type, const vec3 &k_d,
-                 const vec3 &k_s, float s, float alpha, float n, float albedo) {
+                 const vec3 &k_s, float s, float alpha, float n, float albedo,
+                 float softness) {
   if (material_type == "phong")
     return scene.AddMaterial<Phong>(k_d, k_s, s);
   else if (material_type == "ggx")
@@ -46,7 +47,7 @@ auto GetMaterial(Scene &scene, const string &material_type, const vec3 &k_d,
   else if (material_type == "refractive")
     return scene.AddMaterial<GGXRefraction>(n, alpha);
   else if (material_type == "subsurface")
-    return scene.AddMaterial<SubSurfaceMaterial>(albedo, n);
+    return scene.AddMaterial<SubSurfaceMaterial>(albedo, n, softness);
   else {
     cerr << "Unkown material:" << material_type << endl;
     exit(EXIT_FAILURE);
@@ -125,7 +126,7 @@ auto LoadScene(ifstream &fs) {
   vector<vec3> verts;
   vector<mat4> transform_stack;
   vec3 k_d, k_s;
-  float s, alpha, n, albedo;
+  float s, alpha, n, albedo, softness;
   string material_type = "phong";
 
   string line;
@@ -140,9 +141,10 @@ auto LoadScene(ifstream &fs) {
       vec3 position;
       float rad;
       ss >> position >> rad;
-      scene.geometries.emplace_back(Sphere{
-          GetSphere(position, rad, StackMatrices(transform_stack)),
-          GetMaterial(scene, material_type, k_d, k_s, s, alpha, n, albedo)});
+      scene.geometries.emplace_back(
+          Sphere{GetSphere(position, rad, StackMatrices(transform_stack)),
+                 GetMaterial(scene, material_type, k_d, k_s, s, alpha, n,
+                             albedo, softness)});
     } else if (command == "maxverts") {
       continue;  // Not used
     } else if (command == "vertex") {
@@ -154,16 +156,18 @@ auto LoadScene(ifstream &fs) {
       ss >> t;
       const auto triangle =
           GetTriangles(t, verts, StackMatrices(transform_stack));
-      scene.geometries.emplace_back(Mesh{
-          {begin(triangle), end(triangle)},
-          {{0, 1, 2}},
-          GetMaterial(scene, material_type, k_d, k_s, s, alpha, n, albedo)});
+      scene.geometries.emplace_back(
+          Mesh{{begin(triangle), end(triangle)},
+               {{0, 1, 2}},
+               GetMaterial(scene, material_type, k_d, k_s, s, alpha, n, albedo,
+                           softness)});
     } else if (command == "obj") {
       string file_path;
       getline(ss >> ws, file_path);
-      scene.geometries.emplace_back(GetObj(
-          file_path, StackMatrices(transform_stack),
-          GetMaterial(scene, material_type, k_d, k_s, s, alpha, n, albedo)));
+      scene.geometries.emplace_back(
+          GetObj(file_path, StackMatrices(transform_stack),
+                 GetMaterial(scene, material_type, k_d, k_s, s, alpha, n,
+                             albedo, softness)));
     } else if (command == "maxvertnorms") {
       continue;  // TODO: implement triangle-with-normal
     } else if (command == "vertexnormal") {
@@ -210,6 +214,8 @@ auto LoadScene(ifstream &fs) {
       ss >> n;
     } else if (command == "albedo") {
       ss >> albedo;
+    } else if (command == "softness") {
+      ss >> softness;
     } else if (command == "brdf") {
       getline(ss >> ws, material_type);
     } else {
