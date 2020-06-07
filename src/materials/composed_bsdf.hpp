@@ -6,6 +6,11 @@
 
 template <typename... Ts>
 struct ComposedBSDF {
+  ComposedBSDF() = default;
+
+  ComposedBSDF(Ts &&... args)
+      : bsdfs(std::make_tuple<Ts...>(std::forward<Ts>(args)...)) {}
+
   glm::vec3 Value(const glm::vec3 &w_i, const glm::vec3 &w_o) const {
     return std::apply(
         [&](const auto &... m) { return (m.Value(w_i, w_o) + ...); }, bsdfs);

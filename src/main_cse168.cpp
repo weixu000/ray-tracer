@@ -42,6 +42,8 @@ auto GetMaterial(Scene &scene, const string &material_type, const vec3 &k_d,
                  float softness) {
   if (material_type == "phong")
     return scene.AddMaterial<Phong>(k_d, k_s, s);
+  else if (material_type == "ggx")
+    return scene.AddMaterial<GGXReflection>(k_d, k_s, alpha);
   else if (material_type == "refractive")
     return scene.AddMaterial<GGXRefraction>(k_s, alpha);
   else if (material_type == "subsurface")

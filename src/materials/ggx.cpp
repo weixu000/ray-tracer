@@ -50,14 +50,16 @@ vec3 GGXBSDF<transmission>::Value(const vec3& w_i, const vec3& w_o) const {
     }
   }
   if constexpr (transmission) {
-    const auto eta = RefractionRatio(w_i_n, ior[0]);
-    const auto h = -normalize(eta * w_i + w_o);
-    const auto h_n = dot(h, n), w_i_h = dot(w_i, h), w_o_h = dot(w_o, h);
-    if (w_i_h * w_o_h < 0 && h_n > 0 && w_i_h * w_i_n > 0 &&
-        w_o_h * w_o_n > 0) {
-      bsdf += abs(w_i_h * w_o_h) * (1.f - F(w_i_h, k_s)) *
-              G(w_i_n, w_o_n, alpha) * D(h_n, alpha) / abs(w_i_n * w_o_n) /
-              pow(eta * w_i_h + w_o_h, 2.f);
+    for (size_t c = 0; c < 3; ++c) {
+      const auto eta = RefractionRatio(w_i_n, ior[c]);
+      const auto h = -normalize(eta * w_i + w_o);
+      const auto h_n = dot(h, n), w_i_h = dot(w_i, h), w_o_h = dot(w_o, h);
+      if (w_i_h * w_o_h < 0 && h_n > 0 && w_i_h * w_i_n > 0 &&
+          w_o_h * w_o_n > 0) {
+        bsdf[c] += abs(w_i_h * w_o_h) * (1.f - F(w_i_h, k_s[c])) *
+                   G(w_i_n, w_o_n, alpha) * D(h_n, alpha) / abs(w_i_n * w_o_n) /
+                   pow(eta * w_i_h + w_o_h, 2.f);
+      }
     }
   }
 
@@ -72,8 +74,9 @@ vec3 GGXBSDF<transmission>::Sample(const vec3& w_i) const {
     if (Random() < compAdd(F(dot(w_i, h), k_s)) / 3) {
       return reflect(-w_i, h);
     } else {
+      const auto c = size_t(Random() * 3);
       return refract(-w_i, sign(dot(w_i, h)) * h,
-                     RefractionRatio(dot(w_i, n), ior[0]));
+                     RefractionRatio(dot(w_i, n), ior[c]));
     }
   } else {
     return reflect(-w_i, h);
@@ -91,15 +94,22 @@ float GGXBSDF<transmission>::Pdf(const vec3& w_i, const vec3& w_o) const {
   }
 
   if constexpr (transmission) {
-    const auto eta = RefractionRatio(dot(w_i, n), ior[0]);
-    const auto h = -normalize(eta * w_i + w_o);
-    const auto w_i_h = dot(w_i, h), w_o_h = dot(w_o, h);
-    if (w_i_h * w_o_h < 0) {
-      const auto h_n = abs(dot(h, n));
-      const auto t = compAdd(F(dot(w_i, h), k_s)) / 3;
-      pdf += D(h_n, alpha) * h_n * abs(w_o_h) / pow(eta * w_i_h + w_o_h, 2.f) *
-             (1 - t);
+    for (size_t c = 0; c < 3; ++c) {
+      const auto eta = RefractionRatio(dot(w_i, n), ior[c]);
+      const auto h = -normalize(eta * w_i + w_o);
+      const auto w_i_h = dot(w_i, h), w_o_h = dot(w_o, h);
+      if (w_i_h * w_o_h < 0) {
+        const auto h_n = abs(dot(h, n));
+        const auto t = compAdd(F(dot(w_i, h), k_s)) / 3;
+        pdf += D(h_n, alpha) * h_n * abs(w_o_h) /
+               pow(eta * w_i_h + w_o_h, 2.f) * (1 - t) / 3;
+      }
     }
   }
   return pdf;
+}
+
+template <bool transmission>
+float GGXBSDF<transmission>::Weight(const vec3& w_i) const {
+  return glm::compAdd(F(dot(w_i, n), k_s));
 }
