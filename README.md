@@ -3,7 +3,7 @@ Name: Xu Wei A53302898
 
 edX: xwei25cf xwei@ucsd.edu
 
-URL to image-grader:
+URL to final images:
 - HW1: https://lifan.s3.amazonaws.com/homework1/3e15c0ae2494fb5f5c77d3af7538caea/20200405013345/index.html
 - HW2: https://lifan.s3.amazonaws.com/homework2/3e15c0ae2494fb5f5c77d3af7538caea/20200421210614/index.html
 - HW3:
@@ -12,6 +12,7 @@ URL to image-grader:
 - HW4
     - https://lifan.s3.amazonaws.com/homework4a/3e15c0ae2494fb5f5c77d3af7538caea/20200514220909/index.html
     - https://lifan.s3.amazonaws.com/homework4b/3e15c0ae2494fb5f5c77d3af7538caea/20200514220448/index.html
+- Final: https://ucsdcse168wxzzj.wordpress.com/2020/05/26/ucsd-cse-168-2020-spring-final-project
 
 # Compilation Instructions
 - Use CMake to build
@@ -21,13 +22,11 @@ URL to image-grader:
     - `stb-cmake` for image output
 
 # Acceleration structure
-In `bvh.hpp` and `bvh.cpp` I implement Bounding Volume Hierarchy and use it to hold all triangles and spheres in the scene.
-- `BVH::BVH` recursively constructs the binary tree. For each non-leaf node, it sorts centers of bounding boxes along the longest axis and splits in the middle
-- `BVH::Hit` recursively traverses the tree. For each non-leaf node, test if the ray hits the bounding box
+In `kernel.cpp`, I use Embree to do ray tracing. Old code of geometry tracing and BVH has been removed.
 
 # Other things
 - The project structure looks like `pbrt` to some extent
-- Russian roulette can be enabled by template parameter. I use template to reduce code duplication
 - Enable multi-threading to accelerate rendering
-- `BVH` stores shapes following data-oriented pattern
 - `directional`, `point`, `integrator simple`, `nexteventestimation off` have been removed
+- I use std::variant to handle different materials so that they can return BRDF/BSSRDF of different types without memory allocation
+- In `path_tracer.cpp`, `Bounce<T>` structure hides the difference between BRDF/BSSRDF so that modification is minimized
